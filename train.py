@@ -11,7 +11,7 @@ device = torch.device("cpu")
 print(f"Using device: {device}")
 
 # Config
-NUM_CLASSES = 11
+NUM_CLASSES = 12
 BATCH_SIZE = 2
 EPOCHS = 75
 

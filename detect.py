@@ -7,14 +7,15 @@ from model import create_model
 device = torch.device("cpu")
 
 # Load model
-NUM_CLASSES = 11
+NUM_CLASSES = 12
 model = create_model(num_classes=NUM_CLASSES)
 model.load_state_dict(torch.load("object_detector.pth", map_location=device))
 model.eval().to(device)
 
-# Your class names
+# Class names
 CLASS_NAMES = [
     "background",
+    "Wall",
     "Bush",
     "Player",
     "Enemy",
@@ -24,23 +25,22 @@ CLASS_NAMES = [
     "Water",
     "Boxes",
     "PowerCube",
-    "Text",
-    "Wall",
+    "Text"
 ]
 
 COLORS = [
-    (0,0,0),        # background (not used)
-    (255,0,0),      # Wall - red
-    (0,255,0),      # Bush - green
-    (0,0,255),      # Player - blue
-    (255,255,0),    # Enemy - yellow
-    (255,0,255),    # Projectile - magenta
-    (0,255,255),    # Molly - cyan
-    (128,0,128),    # Gas - purple
-    (255,165,0),    # Water - orange
-    (128,128,128),  # Boxes - gray
-    (0,128,0),      # PowerCube - dark green
-    (173, 216, 230) # Text - light blue
+    (0,0,0),         # background (not used)
+    (255,0,0),       # Wall - red
+    (0,255,0),       # Bush - green
+    (0,0,255),       # Player - blue
+    (255,255,0),     # Enemy - yellow
+    (255,0,255),     # Projectile - magenta
+    (0,255,255),     # Molly - cyan
+    (128,0,128),     # Gas - purple
+    (255,165,0),     # Water - orange
+    (128,128,128),   # Boxes - gray
+    (0,128,0),       # PowerCube - dark green
+    (173, 216, 230)  # Text - light blue
 ]
 
 # Load and transform image
@@ -65,7 +65,7 @@ for i, (box, label, score) in enumerate(zip(preds[0]["boxes"], preds[0]["labels"
     # Debug logs
     print(f"  Box {i}: Class={class_name}, Score={score:.3f}, Coordinates=({x1:.1f},{y1:.1f},{x2:.1f},{y2:.1f})")
 
-    if score > 0.5:
+    if score > 0.7:
         draw.rectangle([x1, y1, x2, y2], outline=color, width=6)
         draw.text((x1+15, y1+10), f"{class_name} {score:.2f}", fill=color)
 

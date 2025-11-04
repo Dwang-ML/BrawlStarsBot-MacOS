@@ -31,7 +31,7 @@ class CustomDataset(torch.utils.data.Dataset):
                     cls, xmin, ymin, xmax, ymax = map(float, parts)
                     # Skip invalid boxes
                     boxes.append([xmin, ymin, xmax, ymax])
-                    labels.append(int(cls))
+                    labels.append(int(cls) + 1)
 
         # Convert to tensors
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
