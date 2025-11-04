@@ -1,7 +1,10 @@
-import torch
+import torch, time
 import torchvision.transforms as T
 from PIL import Image, ImageDraw
 from model import create_model
+
+# Config
+img_num = 1
 
 # CPU mode
 device = torch.device("cpu")
@@ -45,13 +48,15 @@ COLORS = [
 
 # Load and transform image
 transform = T.ToTensor()
-img_path = "data/images/val/example.png"
+img_path = "data/images/val/e{}.png".format(img_num)
 img = Image.open(img_path).convert("RGB")
 img_tensor = transform(img).unsqueeze(0).to(device)
 
 # Run inference
+start_time = time.time()
 with torch.no_grad():
     preds = model(img_tensor)
+end_time = time.time()
 
 # Draw predictions
 draw = ImageDraw.Draw(img)
@@ -68,6 +73,8 @@ for i, (box, label, score) in enumerate(zip(preds[0]["boxes"], preds[0]["labels"
     if score > 0.7:
         draw.rectangle([x1, y1, x2, y2], outline=color, width=6)
         draw.text((x1+15, y1+10), f"{class_name} {score:.2f}", fill=color)
+
+print('Processed in ', round(end_time - start_time, 2), 'seconds')
 
 # Show image
 img.show()
