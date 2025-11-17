@@ -17,18 +17,38 @@ class LobbyAutomation:
 
     @staticmethod
     def check_for_idle(frame):
+        # Process screenshot and crop for faster detection time
         screenshot = frame
-        screenshot = screenshot.crop((420 * 2, 400 * 2, 1050 * 2, 580 * 2))  #c
+        screenshot = screenshot.crop((420 * 2, 400 * 2, 1050 * 2, 580 * 2))
         text = extract_text_and_positions(np.array(screenshot))
+
+        # Check for idle
         idle_state = 'idle disconnect' in text.keys()
-        print('Idle state:', idle_state)
         if idle_state:
             if 'reload' in text.keys():
-                x, y = int(text['reload']['center'][0])//2, int(text['reload']['center'][1])//2
-                print('Clicking ({}, {}) to RELOAD from idle disconnect.'.format(x, y))
-                click(480, 550) #c
+                x, y = 420 + int(text['reload']['center'][0])//2, 400 + int(text['reload']['center'][1])//2
+                print('Idle detected. Clicking ({}, {}) to RELOAD from idle disconnect.'.format(x, y))
+                click(x, y)
+                return
             else:
-                print('Couldn\'t find RELOAD button, proceeding.')
+                print('Idle detected. Couldn\'t find RELOAD button, proceeding.')
+                return
+        print('User is not idle.')
+
+        # Check for disconnect
+        dc_state = 'connection lost' in text.keys()
+        if dc_state:
+            if 'retry login' in text.keys():
+                x, y = 420 + int(text['retry login']['center'][0])//2, 400 + int(text['retry login']['center'][1])//2
+                print('Disconnect detected. Clicking ({}, {}) to RETRY LOGIN from disconnect.'.format(x, y))
+                for _ in range(5):
+                    click(x, y)
+                    time.sleep(0.1)
+                return
+            else:
+                print('Disconnect detected. Couldn\'t find RETRY LOGIN button, proceeding.')
+                return
+        print('User is not disconnected.')
 
     def select_brawler(self, brawler):
         print('Selecting brawler.')

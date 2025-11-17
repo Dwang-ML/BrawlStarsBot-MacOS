@@ -114,7 +114,7 @@ def pyla_main(data):
                         self.restart_brawl_stars()
 
             if self.Time_management.idle_check():
-                print("Checking for idle!")
+                print("Checking for idle or disconnect.")
                 self.lobby_automator.check_for_idle(frame)
 
         def main(self):  # this is for timer to stop after time
@@ -176,8 +176,7 @@ def pyla_main(data):
 
         window.maximize()
     except:
-        print(
-            "Couldn't find BlueStacks window. Using another emulator isn't recommended and can lead to unexpected issues.")
+        print("Couldn't find BlueStacks window. Using another emulator isn't recommended and can lead to unexpected issues.")
 
     main = Main(
         lobby_automator=LobbyAutomation(frame_queue)
