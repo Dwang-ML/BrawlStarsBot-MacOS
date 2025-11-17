@@ -1,0 +1,12 @@
+personal_webhook = ""
+discord_id = ""
+super_debug = "yes"
+check_if_brawl_stars_crashed = "no"
+cpu_or_gpu = "auto"
+max_ips = "auto"
+pyla_version = "0.4.11"
+monitor = "0"
+mastery_madness = 0
+long_press_star_drop = "yes"
+trophies_multiplier = 1
+run_for_minutes = 0

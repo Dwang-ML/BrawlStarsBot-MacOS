@@ -1,0 +1,9 @@
+state_check = 3
+no_detections = 10
+specific_brawlers = 999
+game_start = 0
+idle = 10
+gadget = 1
+hypercharge = 3
+wall_detection = 0.3
+no_detection_proceed = 3.0

@@ -1,0 +1,19 @@
+# Coords of btns the bot tries to press.
+[lobby]
+trophies_region_crop = [880, 160, 1000, 220] # not used anymore, doesnt matter
+brawlers_btn = [90, 450] #c
+select_btn = [180, 850] #c
+brawl_stars_icon = [600, 300] # BRAWL STARS ICON WHEN BRAWL STARS CRASHES. SET MANUALLY
+trophy_observer = [25, 95, 400, 105] #c
+[template_matching]
+# Regions which will be cropped and then template will be looked for
+# Example: powerpoint region will crop out a region in which powerpoints are visible inside the shop
+brawl_stars_icon = [10, 1, 990, 61] # no need, not using LDplayer, as its not supported on mac
+powerpoint = [203, 106, 30, 30] #c
+brawler_menu_task = [1100, 75, 80, 75] #c
+close_popup = [1235, 70, 555, 278]
+lobby_menu = [1350, 98, 120, 85] #c
+brawl_pass_house = [1350, 85, 100, 65] #c
+go_back_arrow = [30, 80, 80, 75] #c
+star_drop = [450, 200, 600, 575] #c
+
