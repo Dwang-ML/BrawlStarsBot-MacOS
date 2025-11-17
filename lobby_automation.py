@@ -18,12 +18,12 @@ class LobbyAutomation:
     @staticmethod
     def check_for_idle(frame):
         screenshot = frame
-        screenshot = screenshot.crop((420, 400, 1050, 580))  #c
-        gray_pixels = count_hsv_pixels(screenshot, (0, 0, 66), (0, 0, 66))
+        screenshot = screenshot.crop((420 * 2, 400 * 2, 1050 * 2, 580 * 2))  #c
+        gray_pixels = count_hsv_pixels(screenshot, (100, 24, 20), (110, 44, 40))  #need to confirm
         print("gray pixels (if > 1000 then bot will try to unidle) :", gray_pixels)
         if gray_pixels > 1000:
             print('Clicking (480, 550) to RELOAD from idle disconnect.')
-            click(480, 550)  #c
+            click(480, 550) #c
 
     def select_brawler(self, brawler):
         print('Selecting brawler.')
