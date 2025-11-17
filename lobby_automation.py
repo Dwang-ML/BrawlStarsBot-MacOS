@@ -19,11 +19,16 @@ class LobbyAutomation:
     def check_for_idle(frame):
         screenshot = frame
         screenshot = screenshot.crop((420 * 2, 400 * 2, 1050 * 2, 580 * 2))  #c
-        gray_pixels = count_hsv_pixels(screenshot, (100, 24, 20), (110, 44, 40))  #need to confirm
-        print("gray pixels (if > 1000 then bot will try to unidle) :", gray_pixels)
-        if gray_pixels > 1000:
-            print('Clicking (480, 550) to RELOAD from idle disconnect.')
-            click(480, 550) #c
+        text = extract_text_and_positions(np.array(screenshot))
+        idle_state = 'idle disconnect' in text.keys()
+        print('Idle state:', idle_state)
+        if idle_state:
+            if 'reload' in text.keys():
+                x, y = int(text['reload']['center'][0])//2, int(text['reload']['center'][1])//2
+                print('Clicking ({}, {}) to RELOAD from idle disconnect.'.format(x, y))
+                click(480, 550) #c
+            else:
+                print('Couldn\'t find RELOAD button, proceeding.')
 
     def select_brawler(self, brawler):
         print('Selecting brawler.')
