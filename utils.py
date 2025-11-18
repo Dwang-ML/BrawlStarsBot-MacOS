@@ -353,8 +353,16 @@ def update_wall_model_classes():
         print("Failed to update the wall model classes, please report this error.")
 
 
-def cprint(text: str, hex_color: str):  # Color printing for clarity and aesthetic
+def cprint(text: str, tag: str):  # Color printing for clarity and aesthetic
     try:
+        hex_dict = {
+            'INFO': '#4adcf0',
+            'CHECK': '#4af076',
+            'WARNING': '#ff9a4d',
+            'ERROR': '#ff4d4d',
+            'FAIL': '#ff4d4d'
+        }
+        hex_color = hex_dict[tag]
         hex_color = hex_color.lstrip("#")
         r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
@@ -364,7 +372,13 @@ def cprint(text: str, hex_color: str):  # Color printing for clarity and aesthet
         seconds = t % 60
 
         time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-        print(f"\033[38;2;0;0;0m\033[48;2;173;216;230m {time_str} \033[0m", end=' ')
+
+        if tag != 'ERROR':
+            print(f"\033[38;2;0;0;0m\033[48;2;173;216;230m {time_str} \033[0m", end=' ')
+        else:
+            print(f"\033[38;2;0;0;0m\033[48;2;255;0;0m {time_str} \033[0m", end=' ')
+
+        print(f"\033[38;2;{r};{g};{b}m[{tag}]\033[0m", end=' ')
 
         print(f"\033[38;2;{r};{g};{b}m{text}\033[0m")
     except Exception:
