@@ -10,7 +10,7 @@ import numpy as np
 from difflib import SequenceMatcher
 
 sys.path.append(os.path.abspath('../'))
-from utils import count_hsv_pixels, load_toml_as_dict, cprint
+from utils import count_hsv_pixels, load_toml_as_dict, cprint, linebreak
 
 path = r"./state_finder/images_to_detect/"
 images_with_star_drop = []
@@ -63,8 +63,8 @@ def is_template_in_region(image, template_path, region):  # With scale invariati
             best_template_shape = resized_template.shape[:2]
 
     if best_val >= 0.85:
-        cprint(f"Best match confidence: {best_val:.4f} at scale {best_scale:.2f}", '#90EE90')
-        cprint(f"Template FOUND in image. {template_path.split('/')[-1]}", '#90EE90')
+        cprint(f"Best match confidence: {best_val:.4f} at scale {best_scale:.2f}", 'INFO')
+        cprint(f"Template FOUND in image -  {template_path.split('/')[-1]}", 'CHECK')
     return best_val >= 0.8
 
 
@@ -105,7 +105,7 @@ def find_game_result(screenshot):
     _, text, conf = result[0]
     game_result, ratio = rework_game_result(text)
     if ratio < 0.5:
-        print("Couldn't find game result.")
+        cprint("Couldn't find game result.", 'FAIL')
         return False
     return True
 
@@ -167,6 +167,8 @@ def get_state(screenshot):
     screenshot = np.array(screenshot)
     screenshot_bgr = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
     start_time = time.time()
+    linebreak()
     state = get_in_game_state(screenshot_bgr)
-    print('Current state:', state)
+    cprint(f'Current state: {state}', 'INFO')
+    linebreak()
     return state

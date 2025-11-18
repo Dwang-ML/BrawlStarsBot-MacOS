@@ -3,7 +3,6 @@ import threading
 import time
 from queue import Queue, Full, Empty
 
-import mss
 import pyautogui
 import pygetwindow
 
@@ -20,13 +19,13 @@ from utils import ScreenshotTaker, load_toml_as_dict, current_wall_model_is_late
 from utils import get_brawler_list, update_missing_brawler_ranges, update_icons, check_version, async_notify_user, \
     update_wall_model_classes, get_latest_wall_model_file, get_latest_version, cprint
 
-pyla_version = load_toml_as_dict("./cfg/general_config.toml")['pyla_version']
-chosen_monitor = int(load_toml_as_dict("./cfg/general_config.toml")['monitor'])
+pyla_version = load_toml_as_dict('./cfg/general_config.toml')['pyla_version']
+chosen_monitor = int(load_toml_as_dict('./cfg/general_config.toml')['monitor'])
 frame_lock = threading.Lock()
 frame_available = threading.Event()
 Screenshot = ScreenshotTaker()
 frame_queue = Queue(maxsize=1)
-debug = load_toml_as_dict("cfg/general_config.toml")['super_debug'] == "yes"
+debug = load_toml_as_dict('cfg/general_config.toml')['super_debug'] == 'yes'
 
 
 def capture_loop():
@@ -53,7 +52,7 @@ def pyla_main(data):
             self.Time_management = TimeManagement()
             self.lobby_automator = lobby_automator
             self.Stage_manager = StageManager(Screenshot, data, frame_queue)
-            self.states_requiring_data = ["play_store", "brawl_stars_crashed", "lobby"]
+            self.states_requiring_data = ['play_store', 'brawl_stars_crashed', 'lobby']
             if data[0]['automatically_pick']:
                 self.lobby_automator.select_brawler(data[0]['brawler'])
             self.Play.current_brawler = data[0]['brawler']
@@ -61,10 +60,10 @@ def pyla_main(data):
             self.initialize_stage_manager()
             self.state = None
             try:
-                self.max_ips = int(load_toml_as_dict("cfg/general_config.toml")['max_ips'])
+                self.max_ips = int(load_toml_as_dict('cfg/general_config.toml')['max_ips'])
             except ValueError:
                 self.max_ips = None
-            self.run_for_minutes = int(load_toml_as_dict("cfg/general_config.toml")['run_for_minutes'])
+            self.run_for_minutes = int(load_toml_as_dict('cfg/general_config.toml')['run_for_minutes'])
             self.start_time = time.time()
             self.time_to_stop = False
             self.in_cooldown = False
@@ -75,11 +74,11 @@ def pyla_main(data):
             self.Stage_manager.Trophy_observer.win_streak = 0
             self.Stage_manager.Trophy_observer.current_trophies = data[0]['trophies']
             self.Stage_manager.Trophy_observer.current_mastery = data[0]['mastery'] if data[0][
-                                                                                           'mastery'] != "" else -99999
+                                                                                           'mastery'] != '' else -99999
 
         @staticmethod
         def load_models():
-            folder_path = "./models/"
+            folder_path = './models/'
             model_names = ['mainInGameModel.onnx', 'brawlersInGame.onnx', 'startingScreenModel.onnx',
                            'tileDetector.onnx']
             loaded_models = []
@@ -92,9 +91,9 @@ def pyla_main(data):
         def restart_brawl_stars():
             loop = asyncio.new_event_loop()
             screenshot = Screenshot.take()
-            loop.run_until_complete(async_notify_user("bot_is_stuck", screenshot))
+            loop.run_until_complete(async_notify_user('bot_is_stuck', screenshot))
             loop.close()
-            print("Bot got stuck. User notified. Pause until closed.")
+            cprint('Bot got stuck. User notified. Pause until closed.', 'ERROR')
             time.sleep(99 * 999)
 
         def manage_time_tasks(self, frame):
@@ -106,13 +105,12 @@ def pyla_main(data):
 
             if self.Time_management.no_detections_check():
                 frame_data = self.Play.time_since_detections
-                print(self.Play.time_since_detections)
                 for key, value in frame_data.items():
                     if time.time() - value > self.no_detections_action_threshold:
                         self.restart_brawl_stars()
 
             if self.Time_management.idle_check():
-                print("Checking for idle or disconnect.")
+                cprint('Checking for idle or disconnect.', 'INFO')
                 self.lobby_automator.check_for_idle(frame)
 
         def main(self):  # this is for timer to stop after time
@@ -122,19 +120,19 @@ def pyla_main(data):
                 if self.run_for_minutes > 0 and not self.in_cooldown:
                     elapsed_time = (time.time() - self.start_time) / 60
                     if elapsed_time >= self.run_for_minutes:
-                        cprint(f"Timer is done, {self.run_for_minutes} is over. continuing for 3 minutes if in game",
-                               "#AAE5A4")
+                        cprint(f'Timer is done, {self.run_for_minutes} is over. continuing for 3 minutes if in game',
+                               'CHECK')
                         self.in_cooldown = True  # tries to finish game if in game
                         self.cooldown_start_time = time.time()
                         self.Stage_manager.states['lobby'] = lambda data: 0
 
                 if self.in_cooldown:
                     if time.time() - self.cooldown_start_time >= self.cooldown_duration:
-                        cprint("Stopping bot fully", "#AAE5A4")
+                        cprint('Stopping bot fully', 'ACTION')
                         break
 
                 if abs(s_time - time.time()) > 1:
-                    print(c, "IPS")
+                    cprint(f'{c} IPS', 'INFO')
                     s_time = time.time()
                     c = 0
 
@@ -173,7 +171,7 @@ def pyla_main(data):
 
         window.maximize()
     except:
-        print("Couldn't find BlueStacks window. Using another emulator isn't recommended and can lead to unexpected issues.")
+        cprint('Couldn\'t find BlueStacks window. Using another emulator isn\'t recommended and can lead to unexpected issues.', 'WARNING')
 
     main = Main(
         lobby_automator=LobbyAutomation(frame_queue)
@@ -185,13 +183,13 @@ def pyla_main(data):
 width, height = pyautogui.size()
 
 all_brawlers = get_brawler_list()
-if api_base_url != "localhost":
+if api_base_url != 'localhost':
     update_missing_brawler_ranges(all_brawlers)
     update_icons()
     check_version()
     update_wall_model_classes()
     if not current_wall_model_is_latest():
-        print("New Wall detection model found, downloading... (this may take a long time)")
+        cprint('New Wall detection model found, downloading... (this may take a long time)', 'ACTION')
         get_latest_wall_model_file()
 
 # Use the smaller ratio to maintain aspect ratio

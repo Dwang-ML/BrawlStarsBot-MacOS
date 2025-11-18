@@ -13,25 +13,24 @@ from lobby_automation import LobbyAutomation
 from state_finder.main import get_state
 from trophy_observer import TrophyObserver
 from utils import find_template_center, extract_text_and_positions, load_toml_as_dict, async_notify_user, \
-    save_brawler_data
+    save_brawler_data, cprint
 
-user_id = load_toml_as_dict("cfg/general_config.toml")['discord_id']
-debug = load_toml_as_dict("cfg/general_config.toml")['super_debug'] == "yes"
-user_webhook = load_toml_as_dict("cfg/general_config.toml")['personal_webhook']
+user_id = load_toml_as_dict('cfg/general_config.toml')['discord_id']
+debug = load_toml_as_dict('cfg/general_config.toml')['super_debug'] == 'yes'
+user_webhook = load_toml_as_dict('cfg/general_config.toml')['personal_webhook']
 
 
 def notify_user(message_type):
     # message type will be used to have conditions determining the message
     # but for now there's only one possible type of message
     message_data = {
-        'content': f"<@{user_id}> Pyla Bot has completed all it's targets !"
+        'content': f'<@{user_id}> Pyla Bot has completed all it\'s targets !'
     }
 
     response = requests.post(user_webhook, json=message_data)
 
     if response.status_code != 204:
-        print(
-            f'Failed to send message. Be sure to have put a valid webhook url in the config. Status code: {response.status_code}')
+        cprint(f'Failed to send message. Be sure to have put a valid webhook url in the config. Status code: {response.status_code}', 'ERROR')
 
 
 orig_screen_width, orig_screen_height = 1920, 1080
@@ -66,26 +65,26 @@ class StageManager:
             'end': self.end_game,
             'lobby': self.start_game,
             'play_store': self.click_brawl_stars,
-            "brawl_stars_crashed": self.start_brawl_stars,
+            'brawl_stars_crashed': self.start_brawl_stars,
             'star_drop': self.click_star_drop
         }
         self.Lobby_automation = LobbyAutomation(frame_queue)
-        self.lobby_config = load_toml_as_dict("./cfg/lobby_config.toml")
-        self.brawl_stars_icon = load_image("state_finder/images_to_detect/brawl_stars_icon.png")
-        self.brawl_stars_icon_big = load_image("state_finder/images_to_detect/brawl_stars_icon_big.png")
-        self.mastery_points_icon = load_image("./state_finder/images_to_detect/mastery_points.PNG")
-        self.close_popup_icon = load_image("state_finder/images_to_detect/close_popup.png")
+        self.lobby_config = load_toml_as_dict('./cfg/lobby_config.toml')
+        self.brawl_stars_icon = load_image('state_finder/images_to_detect/brawl_stars_icon.png')
+        self.brawl_stars_icon_big = load_image('state_finder/images_to_detect/brawl_stars_icon_big.png')
+        self.mastery_points_icon = load_image('./state_finder/images_to_detect/mastery_points.PNG')
+        self.close_popup_icon = load_image('state_finder/images_to_detect/close_popup.png')
         self.brawlers_pick_data = brawlers_data
-        brawler_list = [brawler["brawler"] for brawler in brawlers_data]
+        brawler_list = [brawler['brawler'] for brawler in brawlers_data]
         self.Trophy_observer = TrophyObserver(brawler_list)
         self.time_since_last_stat_change = time.time()
         self.frame_queue = frame_queue
-        self.long_press_star_drop = load_toml_as_dict("./cfg/general_config.toml")["long_press_star_drop"]
+        self.long_press_star_drop = load_toml_as_dict('./cfg/general_config.toml')['long_press_star_drop']
 
     def start_brawl_stars(self, frame):
         data = extract_text_and_positions(np.array(frame))
         for key in list(data.keys()):
-            if key.replace(" ", "") in ["brawl", "brawlstars", "stars"]:
+            if key.replace(' ', '') in ['brawl', 'brawlstars', 'stars']:
                 x, y = data[key]['center']
                 pyautogui.click(x, y)
                 return
@@ -97,8 +96,8 @@ class StageManager:
     @staticmethod
     def validate_trophies(trophies_string):
         trophies_string = trophies_string.lower()
-        while "s" in trophies_string:
-            trophies_string = trophies_string.replace("s", "5")
+        while 's' in trophies_string:
+            trophies_string = trophies_string.replace('s', '5')
         numbers = ''.join(filter(str.isdigit, trophies_string))
 
         if not numbers:
@@ -109,60 +108,58 @@ class StageManager:
 
     def start_game(self, data):
         values = {
-            "trophies": self.Trophy_observer.current_trophies,
-            "mastery": self.Trophy_observer.current_mastery
+            'trophies': self.Trophy_observer.current_trophies,
+            'mastery': self.Trophy_observer.current_mastery
         }
 
         type_of_push = self.brawlers_pick_data[0]['type']
         value = values[type_of_push]
-        if value == "" and type_of_push == "mastery":
+        if value == '' and type_of_push == 'mastery':
             value = -99999
         push_current_brawler_till = self.brawlers_pick_data[0]['push_until']
-        if push_current_brawler_till == "" and type_of_push == "mastery":
+        if push_current_brawler_till == '' and type_of_push == 'mastery':
             push_current_brawler_till = 99999
 
         if value >= push_current_brawler_till:
             if len(self.brawlers_pick_data) <= 1:
-                print("Brawler reached required trophies/mastery. No more brawlers selected for pushing in the menu. "
-                      "Bot will"
-                      "now pause itself until closed.", value, push_current_brawler_till)
+                print('Brawler reached required trophies/mastery. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
                 time.sleep(10 ** 5)
                 loop = asyncio.new_event_loop()
                 screenshot = self.Screenshot.take()
-                loop.run_until_complete(async_notify_user("bot_is_stuck", screenshot))
+                loop.run_until_complete(async_notify_user('bot_is_stuck', screenshot))
                 loop.close()
                 return
             loop = asyncio.new_event_loop()
             screenshot = self.Screenshot.take()
-            loop.run_until_complete(async_notify_user(self.brawlers_pick_data[0]["brawler"], screenshot))
+            loop.run_until_complete(async_notify_user(self.brawlers_pick_data[0]['brawler'], screenshot))
             loop.close()
             self.brawlers_pick_data.pop(0)
             self.Trophy_observer.change_trophies(self.brawlers_pick_data[0]['trophies'])
             self.Trophy_observer.current_mastery = self.brawlers_pick_data[0]['mastery'] if self.brawlers_pick_data[0][
-                                                                                                'mastery'] != "" else -99999
+                                                                                                'mastery'] != '' else -99999
             self.Trophy_observer.win_streak = self.brawlers_pick_data[0]['win_streak']
             next_brawler_name = self.brawlers_pick_data[0]['brawler']
-            if self.brawlers_pick_data[0]["automatically_pick"]:
-                print("Picking next automatically picked brawler.")
+            if self.brawlers_pick_data[0]['automatically_pick']:
+                cprint('Picking next automatically picked brawler.', 'ACTION')
                 try:
                     screenshot = self.frame_queue.get(timeout=1)
                 except Empty:
                     screenshot = self.Screenshot.take()
                 current_state = get_state(screenshot)
-                if current_state != "lobby":
-                    print("Trying to reach the lobby to switch brawler")
+                if current_state != 'lobby':
+                    cprint('Trying to reach the lobby to switch brawler', 'INFO')
 
-                while current_state != "lobby":
-                    pyautogui.press("q")
-                    print("Pressed Q to return to lobby")
+                while current_state != 'lobby':
+                    pyautogui.press('q')
+                    cprint('Pressed Q to return to lobby', 'ACTION')
                     time.sleep(1)
                 self.Lobby_automation.select_brawler(next_brawler_name)
             else:
-                print("Next brawler is in manual mode, waiting 10 seconds to let user switch.")
+                cprint('Next brawler is in manual mode, waiting 10 seconds to let user switch.', 'INFO')
 
         # q btn is over the start btn
-        pyautogui.press("q")
-        print("Pressed Q to start a match")
+        pyautogui.press('q')
+        cprint('Pressed Q to start a match.', 'ACTION')
 
     def click_brawl_stars(self, frame):
         screenshot = frame.crop((50, 4, 900, 31))
@@ -172,19 +169,19 @@ class StageManager:
             pyautogui.click(x=x + 50, y=y)
 
     def click_star_drop(self):
-        if self.long_press_star_drop == "yes":
-            pyautogui.keyDown("q")
+        if self.long_press_star_drop == 'yes':
+            pyautogui.keyDown('q')
             time.sleep(10)
-            pyautogui.keyUp("q")
+            pyautogui.keyUp('q')
         else:
-            pyautogui.press("q")
+            pyautogui.press('q')
 
     def end_game(self):
         screenshot = self.Screenshot.take()
 
         found_game_result = False
         current_state = get_state(screenshot)
-        while current_state == "end":
+        while current_state == 'end':
             if not found_game_result and time.time() - self.time_since_last_stat_change > 10:
 
                 # will return True if updates trophies, trophies are updated inside Trophy observer
@@ -193,8 +190,8 @@ class StageManager:
                                                                               'brawler'])
                 self.time_since_last_stat_change = time.time()
                 values = {
-                    "trophies": self.Trophy_observer.current_trophies,
-                    "mastery": self.Trophy_observer.current_mastery
+                    'trophies': self.Trophy_observer.current_trophies,
+                    'mastery': self.Trophy_observer.current_mastery
                 }
                 type_to_push = self.brawlers_pick_data[0]['type']
                 value = values[type_to_push]
@@ -203,31 +200,29 @@ class StageManager:
                 push_current_brawler_till = self.brawlers_pick_data[0]['push_until']
 
                 # things so to have mastery be farmed infinitely if no initial or target mastery value are set
-                if value == "" and type_to_push == "mastery":
+                if value == '' and type_to_push == 'mastery':
                     value = -99999
-                if push_current_brawler_till == "" and type_to_push == "mastery":
+                if push_current_brawler_till == '' and type_to_push == 'mastery':
                     push_current_brawler_till = 99999
 
                 if value >= push_current_brawler_till:
                     if len(self.brawlers_pick_data) <= 1:
-                        print(
-                            "Brawler reached required trophies/mastery. No more brawlers selected for pushing in the menu. "
-                            "Bot will"
-                            "now pause itself until closed.")
+                        print('Brawler reached required trophies/mastery. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
                         loop = asyncio.new_event_loop()
                         screenshot = self.Screenshot.take()
-                        loop.run_until_complete(async_notify_user("completed", screenshot))
+                        loop.run_until_complete(async_notify_user('completed', screenshot))
                         loop.close()
-                        if os.path.exists("latest_brawler_data.json"):
-                            os.remove("latest_brawler_data.json")
+                        if os.path.exists('latest_brawler_data.json'):
+                            os.remove('latest_brawler_data.json')
                         time.sleep(10 ** 5)
                         return
-            pyautogui.press("q")
-            print("Game has ended, pressing Q")
+            pyautogui.press('q')
+            cprint('Game has ended.', 'INFO')
+            cprint('Pressing Q to continue.', 'ACTION')
             time.sleep(3)
             screenshot = self.Screenshot.take()
             current_state = get_state(screenshot)
-        print("Game has ended", current_state)
+        cprint('Game has ended.', 'INFO')
 
     @staticmethod
     def quit_shop():

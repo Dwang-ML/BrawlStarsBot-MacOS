@@ -1,9 +1,10 @@
 import time
 from utils import load_toml_as_dict
 
+
 class TimeManagement:
     def __init__(self):
-        self.thresholds = load_toml_as_dict("cfg/time_tresholds.toml")
+        self.thresholds = load_toml_as_dict('cfg/time_tresholds.toml')
         self.states = {key: time.time() for key in self.thresholds.keys()}
 
     def start(self):
@@ -30,7 +31,7 @@ class TimeManagement:
         return False
 
     def idle_check(self):
-        return self.check_time("idle")
+        return self.check_time('idle')
 
     def ago_game_started(self):
         game_started_since = abs(time.time()) - self.states['game_start']

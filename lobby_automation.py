@@ -1,4 +1,5 @@
 import time
+from utils import cprint, linebreak
 from easyocr import easyocr
 from queue import Empty
 
@@ -17,6 +18,7 @@ class LobbyAutomation:
 
     @staticmethod
     def check_for_idle(frame):
+        linebreak()
         # Process screenshot and crop for faster detection time
         screenshot = frame
         screenshot = screenshot.crop((420 * 2, 400 * 2, 1050 * 2, 580 * 2))
@@ -27,13 +29,13 @@ class LobbyAutomation:
         if idle_state:
             if 'reload' in text.keys():
                 x, y = 420 + int(text['reload']['center'][0]) // 2, 400 + int(text['reload']['center'][1]) // 2
-                print('Idle detected. Clicking ({}, {}) to RELOAD from idle disconnect.'.format(x, y))
+                cprint('Idle detected. Clicking ({}, {}) to RELOAD from idle disconnect.'.format(x, y), 'ACTION')
                 click(x, y)
                 return
             else:
-                print('Idle detected. Couldn\'t find RELOAD button, proceeding.')
+                cprint('Idle detected. Couldn\'t find RELOAD button, proceeding.', 'ACTION')
                 return
-        print('User is not idle.')
+        cprint('User is not idle.', 'INFO')
 
         # Check for disconnect
         dc_state = 'connection lost' in text.keys()
@@ -41,21 +43,23 @@ class LobbyAutomation:
             if 'retry login' in text.keys():
                 x, y = 420 + int(text['retry login']['center'][0]) // 2, 400 + int(
                     text['retry login']['center'][1]) // 2
-                print('Disconnect detected. Clicking ({}, {}) to RETRY LOGIN from disconnect.'.format(x, y))
+                cprint('Disconnect detected. Clicking ({}, {}) to RETRY LOGIN from disconnect.'.format(x, y), 'ACTION')
                 for _ in range(5):
                     click(x, y)
                     time.sleep(0.1)
                 return
             else:
-                print('Disconnect detected. Couldn\'t find RETRY LOGIN button, proceeding.')
+                cprint('Disconnect detected. Couldn\'t find RETRY LOGIN button, proceeding.', 'ACTION')
                 return
-        print('User is not disconnected.')
+        cprint('User is not disconnected.', 'INFO')
+        linebreak()
 
     def select_brawler(self, brawler):
-        print('Selecting brawler.')
+        linebreak()
+        cprint('SELECTING BRAWLER', 'INFO')
 
         # Retrieve screenshot
-        print('Waiting for screenshot...')
+        cprint('Waiting for screenshot...', 'INFO')
         ss_text = []
         while True:
             time.sleep(0.5)
@@ -69,12 +73,12 @@ class LobbyAutomation:
             ss_text = reader.readtext(np.array(screenshot))
             for item in ss_text:
                 text = item[1].lower()
-                if "brawlers" in text:
+                if 'brawlers' in text:
                     break
             else:
                 continue
             break
-        print('Screenshot received.')
+        cprint('Screenshot received.', 'CHECK')
 
         # Retrieve and click
         x = 0
@@ -89,7 +93,7 @@ class LobbyAutomation:
                 break
         x = x // 0.65 // 2
         y = y // 0.65 // 2
-        print('Clicking ({}, {}) for brawler selection button.'.format(x, y))
+        cprint('Clicking ({}, {}) for brawler selection button.'.format(x, y),'ACTION')
         click(x, y)
 
         # Find brawler
@@ -101,7 +105,7 @@ class LobbyAutomation:
 
             screenshot = screenshot.resize((int(screenshot.width * 0.65), int(screenshot.height * 0.65)))
             screenshot = np.array(screenshot)
-            print('Extracting text on current screen...')
+            cprint('Extracting text on current screen...', 'ACTION')
             results = extract_text_and_positions(screenshot)
             reworked_results = {}
             for key in results.keys():
@@ -117,18 +121,17 @@ class LobbyAutomation:
                 if key in replace_dict:
                     key = replace_dict[key]
                 reworked_results[key] = results[orig_key]
-            print('All detected text while looking for brawler name:', reworked_results.keys())
             if brawler in reworked_results.keys():
                 # Click brawler
-                print('Found brawler', brawler)
+                cprint('Found brawler ' + brawler + '.', 'CHECK')
                 x, y = reworked_results[brawler]['center']
                 x, y = x // 0.65 // 2, y // 0.65 // 2  # Rescale back and divide due to Mac system
-                print('Clicking ({}, {}) to confirm {}.'.format(x, y, brawler))
+                cprint('Clicking ({}, {}) to confirm {}.'.format(x, y, brawler), 'ACTION')
                 click(x, y)
                 time.sleep(2)
 
                 # Retrieve screenshot
-                print('Waiting for screenshot...')
+                cprint('Waiting for screenshot...', 'INFO')
                 ss_text = []
                 while True:
                     time.sleep(0.5)
@@ -144,12 +147,12 @@ class LobbyAutomation:
                         text = item[1].lower()
                         if text == 'selegt':
                             text = 'select'
-                        if "select" in text:
+                        if 'select' in text:
                             break
                     else:
                         continue
                     break
-                print('Screenshot received.')
+                cprint('Screenshot received.', 'CHECK')
 
                 # Retrieve and click
                 x = 0
@@ -164,12 +167,13 @@ class LobbyAutomation:
                         break
                 x = x // 0.65 // 2
                 y = y // 0.65 // 2
-                print('Clicking ({}, {}) to select {}'.format(x, y, brawler))
+                cprint('Clicking ({}, {}) to select {}'.format(x, y, brawler), 'ACTION')
                 click(x, y)
-                print('Selected brawler', brawler)
+                cprint('Selected brawler' + brawler + '.', 'CHECK')
                 time.sleep(5)
                 break
             else:
-                print('Did not find brawler.')
+                cprint('Did not find brawler.', 'FAIL')
             pyautogui.scroll(-100)
+            linebreak()
             time.sleep(1)

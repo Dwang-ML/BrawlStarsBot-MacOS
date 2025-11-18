@@ -8,7 +8,7 @@ from shapely.geometry import Polygon
 from state_finder.main import get_state
 from detect import Detect
 from state_finder.main import get_in_game_state
-from utils import load_toml_as_dict, count_hsv_pixels
+from utils import load_toml_as_dict, count_hsv_pixels, cprint
 
 pyautogui.PAUSE = 0
 
@@ -18,18 +18,18 @@ TILE_SIZE = 70
 class Movement:
     def __init__(self):
         self.fix_movement_keys = {
-            "delay_to_trigger": load_toml_as_dict("cfg/bot_config.toml")["unstuck_movement_delay"],
-            "duration": load_toml_as_dict("cfg/bot_config.toml")["unstuck_movement_hold_time"],
-            "toggled": False,
-            "started_at": time.time(),
-            "fixed": ""
+            'delay_to_trigger': load_toml_as_dict('cfg/bot_config.toml')['unstuck_movement_delay'],
+            'duration': load_toml_as_dict('cfg/bot_config.toml')['unstuck_movement_hold_time'],
+            'toggled': False,
+            'started_at': time.time(),
+            'fixed': ''
         }
-        self.game_mode = load_toml_as_dict("cfg/bot_config.toml")["gamemode_type"]
-        self.should_use_gadget = load_toml_as_dict("cfg/bot_config.toml")["bot_uses_gadgets"] == "yes" or \
-                                 load_toml_as_dict("cfg/bot_config.toml")["bot_uses_gadgets"] == "true"
-        self.gadget_treshold = load_toml_as_dict("cfg/time_tresholds.toml")["gadget"]
-        self.hypercharge_treshold = load_toml_as_dict("cfg/time_tresholds.toml")["hypercharge"]
-        self.walls_treshold = load_toml_as_dict("cfg/time_tresholds.toml")["wall_detection"]
+        self.game_mode = load_toml_as_dict('cfg/bot_config.toml')['gamemode_type']
+        self.should_use_gadget = load_toml_as_dict('cfg/bot_config.toml')['bot_uses_gadgets'] == 'yes' or \
+                                 load_toml_as_dict('cfg/bot_config.toml')['bot_uses_gadgets'] == 'true'
+        self.gadget_treshold = load_toml_as_dict('cfg/time_tresholds.toml')['gadget']
+        self.hypercharge_treshold = load_toml_as_dict('cfg/time_tresholds.toml')['hypercharge']
+        self.walls_treshold = load_toml_as_dict('cfg/time_tresholds.toml')['wall_detection']
         self.keep_walls_in_memory = self.walls_treshold <= 1
         self.last_walls_data = None
         self.keys_hold = []
@@ -60,38 +60,38 @@ class Movement:
     @staticmethod
     def get_horizontal_move_key(direction_x, opposite=False):
         if opposite:
-            return "A" if direction_x > 0 else "D"
-        return "D" if direction_x > 0 else "A"
+            return 'A' if direction_x > 0 else 'D'
+        return 'D' if direction_x > 0 else 'A'
 
     @staticmethod
     def get_vertical_move_key(direction_y, opposite=False):
         if opposite:
-            return "W" if direction_y > 0 else "S"
-        return "S" if direction_y > 0 else "W"
+            return 'W' if direction_y > 0 else 'S'
+        return 'S' if direction_y > 0 else 'W'
 
     @staticmethod
     def attack():
-        pyautogui.press("e")
+        pyautogui.press('e')
 
     @staticmethod
     def use_hypercharge():
-        pyautogui.press("h")
+        pyautogui.press('h')
 
     @staticmethod
     def use_gadget():
-        pyautogui.press("g")
+        pyautogui.press('g')
 
     @staticmethod
     def get_random_attack_key():
-        random_movement = random.choice(["A", "W", "S", "D"])
-        random_movement += random.choice(["A", "W", "S", "D"])
+        random_movement = random.choice(['A', 'W', 'S', 'D'])
+        random_movement += random.choice(['A', 'W', 'S', 'D'])
         return random_movement
 
     @staticmethod
     def reverse_movement(movement):
         # Create a translation table
         movement = movement.lower()
-        translation_table = str.maketrans("wasd", "sdwa")
+        translation_table = str.maketrans('wasd', 'sdwa')
         return movement.translate(translation_table)
 
     def unstuck_movement_if_needed(self, movement, current_time=time.time()):
@@ -102,28 +102,27 @@ class Movement:
 
             return self.fix_movement_keys['fixed']
 
-        if "".join(self.keys_hold) != movement and movement[::-1] != "".join(self.keys_hold):
+        if ''.join(self.keys_hold) != movement and movement[::-1] != ''.join(self.keys_hold):
             self.time_since_movement_change = current_time
 
-        # print(f"Last change: {self.time_since_movement_change}", f" self.hold: {self.keys_hold}",f" c movement: {movement}")
-        if current_time - self.time_since_movement_change > self.fix_movement_keys["delay_to_trigger"]:
+        if current_time - self.time_since_movement_change > self.fix_movement_keys['delay_to_trigger']:
             reversed_movement = self.reverse_movement(movement)
 
-            if reversed_movement == "s":
+            if reversed_movement == 's':
                 reversed_movement = random.choice(['aw', 'dw'])
-            elif reversed_movement == "w":
+            elif reversed_movement == 'w':
                 reversed_movement = random.choice(['as', 'ds'])
 
-            """
-            If reverse movement is either "w" or "s" it means the bot is stuck
+            '''
+            If reverse movement is either 'w' or 's' it means the bot is stuck
             going forward or backward. This happens when it doesn't detect a wall in front
             so to go around it it could either go to the left diagonal or right
-            """
+            '''
 
             self.fix_movement_keys['fixed'] = reversed_movement
             self.fix_movement_keys['toggled'] = True
             self.fix_movement_keys['started_at'] = current_time
-            print(f"REVERSED! from {movement} to {reversed_movement}!")
+            cprint(f'REVERSED from {movement} to {reversed_movement}.', 'ACTION')
             return reversed_movement
 
         return movement
@@ -153,7 +152,7 @@ class Play(Movement):
                                                     'surge', 'tara', 'tick', 'willow', 'lily', 'enemy_ability',
                                                     'ally_ability'])
         self.Detect_starting_screen = Detect(starting_screen_model)
-        self.tile_detector_model_classes = load_toml_as_dict("cfg/bot_config.toml")["wall_model_classes"]
+        self.tile_detector_model_classes = load_toml_as_dict('cfg/bot_config.toml')['wall_model_classes']
 
         self.Detect_tile_detector = Detect(
             tile_detector_model,
@@ -172,12 +171,12 @@ class Play(Movement):
         self.is_hypercharge_ready = False
         self.is_gadget_ready = False
         self.brawler_types = {
-            "throwers": ["barley", "dynamike", "grom", "larrylawrie", "mrp", "sprout", "tick", "willow"]
+            'throwers': ['barley', 'dynamike', 'grom', 'larrylawrie', 'mrp', 'sprout', 'tick', 'willow']
         }
         self.brawler_ranges = self.load_brawler_ranges()
         self.time_since_detections = {
-            "player": time.time(),
-            "enemy": time.time(),
+            'player': time.time(),
+            'enemy': time.time(),
         }
         self.time_since_last_proceeding = time.time()
 
@@ -187,24 +186,24 @@ class Play(Movement):
         self.wall_history = []
         self.wall_history_length = 3  # Number of frames to keep walls
         self.scene_data = []
-        self.should_detect_walls = load_toml_as_dict("cfg/bot_config.toml")["gamemode"] in ["brawlball", "brawl_ball",
-                                                                                            "brawll ball"]
-        self.minimum_movement_delay = load_toml_as_dict("cfg/bot_config.toml")["minimum_movement_delay"]
-        self.no_detection_proceed_delay = load_toml_as_dict("cfg/time_tresholds.toml")["no_detection_proceed"]
-        self.gadget_pixels_minimum = load_toml_as_dict("cfg/bot_config.toml")["gadget_pixels_minimum"]
-        self.hypercharge_pixels_minimum = load_toml_as_dict("cfg/bot_config.toml")["hypercharge_pixels_minimum"]
-        self.wall_detection_confidence = load_toml_as_dict("cfg/bot_config.toml")["wall_detection_confidence"]
+        self.should_detect_walls = load_toml_as_dict('cfg/bot_config.toml')['gamemode'] in ['brawlball', 'brawl_ball',
+                                                                                            'brawll ball']
+        self.minimum_movement_delay = load_toml_as_dict('cfg/bot_config.toml')['minimum_movement_delay']
+        self.no_detection_proceed_delay = load_toml_as_dict('cfg/time_tresholds.toml')['no_detection_proceed']
+        self.gadget_pixels_minimum = load_toml_as_dict('cfg/bot_config.toml')['gadget_pixels_minimum']
+        self.hypercharge_pixels_minimum = load_toml_as_dict('cfg/bot_config.toml')['hypercharge_pixels_minimum']
+        self.wall_detection_confidence = load_toml_as_dict('cfg/bot_config.toml')['wall_detection_confidence']
 
     def get_specific_data(self, frame):
         self.specific_game_data = self.Detect_specific_info.detect_objects(frame)
 
     @staticmethod
     def load_brawler_ranges():
-        ranges = load_toml_as_dict("cfg/ranges.toml")
+        ranges = load_toml_as_dict('cfg/ranges.toml')
         current_width, current_height = pyautogui.size()
         screen_size_ratio = min(current_height / 1080, current_width / 1920)
         for k, v in ranges.items():
-            if k == "title":
+            if k == 'title':
                 continue
             ranges[k] = [int(v[0] * screen_size_ratio), int(v[1] * screen_size_ratio)]
         return ranges
@@ -235,7 +234,7 @@ class Play(Movement):
             for move in alternative_moves:
                 if not self.is_path_blocked(player_position, move, walls):
                     return move
-            print("No movement possible?")
+            cprint('No movement possible.', 'INFO')
             # If no movement is possible, return empty string
             return preferred_movement
 
@@ -287,10 +286,10 @@ class Play(Movement):
     @staticmethod
     def validate_game_data(data):
         incomplete = False
-        if "player" not in data.keys():
+        if 'player' not in data.keys():
             incomplete = True  # This is required so track_no_detections can also keep track if enemy is missing
 
-        if "enemy" not in data.keys():
+        if 'enemy' not in data.keys():
             data['enemy'] = None
 
         if 'wall' not in data.keys() or not data['wall']:
@@ -301,8 +300,8 @@ class Play(Movement):
     def track_no_detections(self, data):
         if not data:
             data = {
-                "enemy": None,
-                "player": None
+                'enemy': None,
+                'player': None
             }
         for key, value in data.items():
             if value:
@@ -350,7 +349,7 @@ class Play(Movement):
         purple_pixels = count_hsv_pixels(screenshot, (137, 158, 159), (179, 255, 255))
 
         if purple_pixels > self.hypercharge_pixels_minimum:
-            print("Hyper charge ready", purple_pixels)
+            cprint('Hyper charge ready.', 'INFO')
             return True
         return False
 
@@ -358,7 +357,7 @@ class Play(Movement):
         screenshot = frame.crop((1250 * 2, 810 * 2, 1320 * 2, 880 * 2))  #c
         green_pixels = count_hsv_pixels(screenshot, (57, 219, 165), (62, 255, 255))
         if green_pixels > self.gadget_pixels_minimum:
-            print('Gadget ready', green_pixels)
+            cprint('Gadget ready.', 'INFO')
             return True
         return False
 
@@ -391,7 +390,7 @@ class Play(Movement):
         threshold = 1
 
         combined_walls = [list(wall) for wall, count in wall_counts.items() if count >= threshold]
-        print(f"Combined walls: {combined_walls}")
+        cprint(f'Combined walls: {combined_walls}', 'INFO')
 
         return combined_walls
 
@@ -407,11 +406,11 @@ class Play(Movement):
         if enemy_distance > safe_range:  # Move towards the enemy
             move_horizontal = self.get_horizontal_move_key(direction_x)
             move_vertical = self.get_vertical_move_key(direction_y)
-            state = "towards"
+            state = 'towards'
         else:  # Move away from the enemy
             move_horizontal = self.get_horizontal_move_key(direction_x, opposite=True)
             move_vertical = self.get_vertical_move_key(direction_y, opposite=True)
-            state = "escape"
+            state = 'escape'
 
         if self.game_mode == 3:
             opposite_move = 'D' if move_horizontal == 'A' else 'A'
@@ -428,7 +427,7 @@ class Play(Movement):
                 movement = move
                 break
         else:
-            print("all paths blocked")
+            cprint('All paths blocked.', 'INFO')
             # If all preferred directions are blocked, try alternative directions
             alternative_moves = ['W', 'A', 'D', 'S']
             random.shuffle(alternative_moves)
@@ -460,7 +459,7 @@ class Play(Movement):
                 self.time_since_hypercharge_checked = time.time()
                 self.is_hypercharge_ready = False
             enemy_hittable = self.is_enemy_hittable(player_pos, enemy_coords, walls)
-            print("enemy hittable", enemy_hittable, "enemy_distance", enemy_distance)
+            cprint(f'Enemy hittable {enemy_hittable}, enemy_distance {enemy_distance}', 'INFO')
             if enemy_hittable:
                 self.attack()
 
@@ -469,7 +468,7 @@ class Play(Movement):
     def main(self, frame, brawler):
         current_time = time.time()
         data = self.get_main_data(frame)
-        print("Main data detected:", data)
+        cprint(f'Main data detected: {data}', 'INFO')
         if self.should_detect_walls and current_time - self.time_since_walls_checked > self.walls_treshold:
 
             tile_data = self.get_tile_data(frame)
@@ -491,11 +490,11 @@ class Play(Movement):
             self.keys_hold = []
             if current_time - self.time_since_last_proceeding > self.no_detection_proceed_delay:
                 current_state = get_state(frame)
-                if current_state != "match":
+                if current_state != 'match':
                     self.time_since_last_proceeding = current_time
                 else:
-                    print("Haven't detected the player in a while - proceeding")
-                    pyautogui.press("q")
+                    cprint('Haven\'t detected the player in a while - proceeding.', 'ACTION')
+                    pyautogui.press('q')
                     self.time_since_last_proceeding = time.time()
             return
         self.time_since_last_proceeding = time.time()
@@ -579,7 +578,7 @@ class Play(Movement):
             # Write frame to video
             out.write(img)
 
-        print('Visualization generated.')
+        cprint('Visualization generated.', 'INFO')
         out.release()
 
     @staticmethod

@@ -360,7 +360,8 @@ def cprint(text: str, tag: str):  # Color printing for clarity and aesthetic
             'CHECK': '#4af076',
             'WARNING': '#ff9a4d',
             'ERROR': '#ff4d4d',
-            'FAIL': '#ff4d4d'
+            'FAIL': '#ff4d4d',
+            'ACTION': '#f04dff'
         }
         hex_color = hex_dict[tag]
         hex_color = hex_color.lstrip("#")

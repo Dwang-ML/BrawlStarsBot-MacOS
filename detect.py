@@ -1,4 +1,5 @@
 import cv2
+from utils import cprint
 import numpy as np
 import torch
 from PIL import Image
@@ -8,7 +9,7 @@ from utils import load_toml_as_dict
 
 class Detect:
     def __init__(self, model_path, ignore_classes=None, classes=None, input_size=(640, 640)):
-        self.preferred_device = load_toml_as_dict("cfg/general_config.toml")['cpu_or_gpu']
+        self.preferred_device = load_toml_as_dict('cfg/general_config.toml')['cpu_or_gpu']
         self.model_path = model_path
         self.classes = classes
         self.ignore_classes = ignore_classes if ignore_classes else []
@@ -18,21 +19,21 @@ class Detect:
 
     def load_model(self):
         available_providers = ort.get_available_providers()
-        if self.preferred_device == "gpu" or self.preferred_device == "auto":
-            if "CUDAExecutionProvider" in available_providers:
-                onnx_provider = "CUDAExecutionProvider"
-                print("Using CUDA GPU")
-            elif "DmlExecutionProvider" in available_providers:
-                onnx_provider = "DmlExecutionProvider"
-                print("Using GPU")
-            elif "AzureExecutionProvider" in available_providers:
-                onnx_provider = "AzureExecutionProvider"
+        if self.preferred_device == 'gpu' or self.preferred_device == 'auto':
+            if 'CUDAExecutionProvider' in available_providers:
+                onnx_provider = 'CUDAExecutionProvider'
+                cprint('Using CUDA GPU', 'INFO')
+            elif 'DmlExecutionProvider' in available_providers:
+                onnx_provider = 'DmlExecutionProvider'
+                cprint('Using GPU', 'INFO')
+            elif 'AzureExecutionProvider' in available_providers:
+                onnx_provider = 'AzureExecutionProvider'
             else:
-                print("Using CPU as no GPU provider found")
-                onnx_provider = "CPUExecutionProvider"
+                cprint('Using CPU as no GPU provider found', 'INFO')
+                onnx_provider = 'CPUExecutionProvider'
 
         else:
-            onnx_provider = "CPUExecutionProvider"
+            onnx_provider = 'CPUExecutionProvider'
 
         so = ort.SessionOptions()
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
