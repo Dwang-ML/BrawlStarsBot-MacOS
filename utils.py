@@ -1,6 +1,7 @@
 import hashlib
 import io
 import os
+import shutil
 from io import BytesIO
 from pynput.mouse import Controller, Button
 import json
@@ -352,10 +353,23 @@ def update_wall_model_classes():
         print("Failed to update the wall model classes, please report this error.")
 
 
-def cprint(text: str, hex_color: str):  #omg color!!!
+def cprint(text: str, hex_color: str):  # Color printing for clarity and aesthetic
     try:
         hex_color = hex_color.lstrip("#")
         r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+        t = int(time.time())
+        hours = (t % 86400) // 3600
+        minutes = (t % 3600) // 60
+        seconds = t % 60
+
+        time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        print(f"\033[38;2;0;0;0m\033[48;2;173;216;230m {time_str} \033[0m", end=' ')
+
         print(f"\033[38;2;{r};{g};{b}m{text}\033[0m")
     except Exception:
         print(text)
+
+def linebreak():
+    columns = shutil.get_terminal_size().columns
+    print('-' * columns)

@@ -1,10 +1,10 @@
 gamemode_type = 3
 bot_uses_gadgets = "yes"
-minimum_movement_delay = 0.3
+minimum_movement_delay = 0.5
 gamemode = "brawlball"
-unstuck_movement_delay = 3.0
+unstuck_movement_delay = 2.0
 unstuck_movement_hold_time = 1.5
 wall_model_classes = [ "bush", "blue_post", "block_of_stone&grass", "cubic_wall", "red_pottery", "wooden_barrel", "cactus", "wooden_box", "wooden_fence", "invincible_wall", "yellow_wall", "blue_barrel", "metallic_fence", "blue_weights", "potted_plant",]
 gadget_pixels_minimum = 2000
 hypercharge_pixels_minimum = 1400
-wall_detection_confidence = 0.7
+wall_detection_confidence = 0.6
