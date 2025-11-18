@@ -1,18 +1,18 @@
 import time
+from easyocr import easyocr
 from queue import Empty
 
 import numpy as np
 import pyautogui
 from utils import click
-from utils import extract_text_and_positions, ScreenshotTaker, count_hsv_pixels, load_toml_as_dict
+from utils import extract_text_and_positions, ScreenshotTaker, load_toml_as_dict
 
-debug = load_toml_as_dict("cfg/general_config.toml")['super_debug'] == "yes"
+reader = easyocr.Reader(['en'])
 
 
 class LobbyAutomation:
     def __init__(self, frame_queue):
         self.Screenshot = ScreenshotTaker()
-        self.coords_cfg = load_toml_as_dict("./cfg/lobby_config.toml")
         self.frame_queue = frame_queue
 
     @staticmethod
@@ -26,7 +26,7 @@ class LobbyAutomation:
         idle_state = 'idle disconnect' in text.keys()
         if idle_state:
             if 'reload' in text.keys():
-                x, y = 420 + int(text['reload']['center'][0])//2, 400 + int(text['reload']['center'][1])//2
+                x, y = 420 + int(text['reload']['center'][0]) // 2, 400 + int(text['reload']['center'][1]) // 2
                 print('Idle detected. Clicking ({}, {}) to RELOAD from idle disconnect.'.format(x, y))
                 click(x, y)
                 return
@@ -39,7 +39,8 @@ class LobbyAutomation:
         dc_state = 'connection lost' in text.keys()
         if dc_state:
             if 'retry login' in text.keys():
-                x, y = 420 + int(text['retry login']['center'][0])//2, 400 + int(text['retry login']['center'][1])//2
+                x, y = 420 + int(text['retry login']['center'][0]) // 2, 400 + int(
+                    text['retry login']['center'][1]) // 2
                 print('Disconnect detected. Clicking ({}, {}) to RETRY LOGIN from disconnect.'.format(x, y))
                 for _ in range(5):
                     click(x, y)
@@ -52,10 +53,46 @@ class LobbyAutomation:
 
     def select_brawler(self, brawler):
         print('Selecting brawler.')
-        x, y = self.coords_cfg['lobby']['brawlers_btn'][0], self.coords_cfg['lobby']['brawlers_btn'][1]
+
+        # Retrieve screenshot
+        print('Waiting for screenshot...')
+        ss_text = []
+        while True:
+            time.sleep(0.5)
+
+            # Retrieve screenshot
+            screenshot = self.frame_queue.get(timeout=1)
+            screenshot = screenshot.resize((int(screenshot.width * 0.65), int(screenshot.height * 0.65)))
+            if screenshot == Empty: continue
+
+            # Check if BRAWLER button is found
+            ss_text = reader.readtext(np.array(screenshot))
+            for item in ss_text:
+                text = item[1].lower()
+                if "brawlers" in text:
+                    break
+            else:
+                continue
+            break
+        print('Screenshot received.')
+
+        # Retrieve and click
+        x = 0
+        y = 0
+        for (bbox, text, conf) in ss_text:
+            if 'brawlers' in text.lower():
+                # bbox format: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                xs = [p[0] for p in bbox]
+                ys = [p[1] for p in bbox]
+                x = sum(xs) / 4
+                y = sum(ys) / 4
+                break
+        x = x // 0.65 // 2
+        y = y // 0.65 // 2
         print('Clicking ({}, {}) for brawler selection button.'.format(x, y))
         click(x, y)
-        c = 0
+
+        # Find brawler
         for i in range(50):
             try:
                 screenshot = self.frame_queue.get(timeout=1)
@@ -64,43 +101,75 @@ class LobbyAutomation:
 
             screenshot = screenshot.resize((int(screenshot.width * 0.65), int(screenshot.height * 0.65)))
             screenshot = np.array(screenshot)
-            print("Extracting text on current screen...")
+            print('Extracting text on current screen...')
             results = extract_text_and_positions(screenshot)
             reworked_results = {}
             for key in results.keys():
                 orig_key = key
-                for symbol in [' ', '-', '.', "&"]:
-                    key = key.replace(symbol, "")
-                if key == "shey":
-                    key = "shelly"
+                for symbol in [' ', '-', '.', '&']:
+                    key = key.replace(symbol, '')
+                replace_dict = {
+                    'shey': 'shelly',
+                    '@ola': 'lola',
+                    '@eon': 'leon',
+                    'rzco': 'rico',
+                }
+                if key in replace_dict:
+                    key = replace_dict[key]
                 reworked_results[key] = results[orig_key]
-            print("All detected text while looking for brawler name:", reworked_results.keys())
+            print('All detected text while looking for brawler name:', reworked_results.keys())
             if brawler in reworked_results.keys():
-                print("Found brawler", brawler)
+                # Click brawler
+                print('Found brawler', brawler)
                 x, y = reworked_results[brawler]['center']
-                x, y = x / 0.65 / 2, y / 0.65 / 2  # Rescale back and divide due to Mac system
-                print('Clicking ({}, {}) to select {}.'.format(x, y, brawler))
+                x, y = x // 0.65 // 2, y // 0.65 // 2  # Rescale back and divide due to Mac system
+                print('Clicking ({}, {}) to confirm {}.'.format(x, y, brawler))
                 click(x, y)
-                time.sleep(4)
-                select_x, select_y = self.coords_cfg['lobby']['select_btn'][0], self.coords_cfg['lobby']['select_btn'][
-                    1]
-                print('Clicking ({}, {}) to confirm select and use {}'.format(select_x, select_y, brawler))
-                click(select_x, select_y)
-                print("Selected brawler", brawler)
                 time.sleep(2)
+
+                # Retrieve screenshot
+                print('Waiting for screenshot...')
+                ss_text = []
+                while True:
+                    time.sleep(0.5)
+
+                    # Retrieve screenshot
+                    screenshot = self.frame_queue.get(timeout=1)
+                    screenshot = screenshot.resize((int(screenshot.width * 0.65), int(screenshot.height * 0.65)))
+                    if screenshot == Empty: continue
+
+                    # Check if SELECT button is found
+                    ss_text = reader.readtext(np.array(screenshot))
+                    for item in ss_text:
+                        text = item[1].lower()
+                        if text == 'selegt':
+                            text = 'select'
+                        if "select" in text:
+                            break
+                    else:
+                        continue
+                    break
+                print('Screenshot received.')
+
+                # Retrieve and click
+                x = 0
+                y = 0
+                for (bbox, text, conf) in ss_text:
+                    if ('select' in text.lower()) or ('selegt' in text.lower()):
+                        # bbox format: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
+                        xs = [p[0] for p in bbox]
+                        ys = [p[1] for p in bbox]
+                        x = sum(xs) / 4
+                        y = sum(ys) / 4
+                        break
+                x = x // 0.65 // 2
+                y = y // 0.65 // 2
+                print('Clicking ({}, {}) to select {}'.format(x, y, brawler))
+                click(x, y)
+                print('Selected brawler', brawler)
+                time.sleep(5)
                 break
             else:
                 print('Did not find brawler.')
-            if c == 0:
-                pyautogui.moveTo(520, 450)  #c
-                pyautogui.mouseDown()
-                time.sleep(0.3)
-                pyautogui.moveTo(520, 430, duration=1)  #c
-                pyautogui.mouseUp()
-                c += 1
-                continue  # Some weird bug causing the first frame to not get any results so this redoes it
-            pyautogui.moveTo(520, 820)  #c
-            pyautogui.mouseDown()
-            pyautogui.moveTo(520, 490, duration=1)  #c
-            pyautogui.mouseUp()
+            pyautogui.scroll(-100)
             time.sleep(1)

@@ -47,7 +47,6 @@ capture_thread = threading.Thread(target=capture_loop, daemon=True)
 
 def pyla_main(data):
     class Main:
-
         def __init__(self, lobby_automator):
             self.specific_brawlers_data = []
             self.Play = Play(*self.load_models())
@@ -56,7 +55,6 @@ def pyla_main(data):
             self.Stage_manager = StageManager(Screenshot, data, frame_queue)
             self.states_requiring_data = ["play_store", "brawl_stars_crashed", "lobby"]
             if data[0]['automatically_pick']:
-                print("Picking brawler automatically")
                 self.lobby_automator.select_brawler(data[0]['brawler'])
             self.Play.current_brawler = data[0]['brawler']
             self.no_detections_action_threshold = 60 * 8
@@ -121,7 +119,6 @@ def pyla_main(data):
             s_time = time.time()
             c = 0
             while True:
-
                 if self.run_for_minutes > 0 and not self.in_cooldown:
                     elapsed_time = (time.time() - self.start_time) / 60
                     if elapsed_time >= self.run_for_minutes:
@@ -194,8 +191,7 @@ if api_base_url != "localhost":
     check_version()
     update_wall_model_classes()
     if not current_wall_model_is_latest():
-        print(
-            "New Wall detection model found, downloading... (this might take a few minutes depending on your internet speed)")
+        print("New Wall detection model found, downloading... (this may take a long time)")
         get_latest_wall_model_file()
 
 # Use the smaller ratio to maintain aspect ratio
