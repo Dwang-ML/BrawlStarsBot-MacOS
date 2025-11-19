@@ -64,7 +64,7 @@ def is_template_in_region(image, template_path, region):  # With scale invariati
 
     if best_val >= 0.85:
         cprint(f"Best match confidence: {best_val:.4f} at scale {best_scale:.2f}", 'INFO')
-        cprint(f"Template FOUND in image -  {template_path.split('/')[-1]}", 'CHECK')
+        cprint(f"Template FOUND in image - {template_path.split('/')[-1]}", 'CHECK')
     return best_val >= 0.8
 
 

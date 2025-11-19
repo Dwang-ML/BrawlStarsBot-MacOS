@@ -2,6 +2,7 @@ import math
 import random
 import time
 
+import numpy as np
 import pyautogui
 from shapely import LineString
 from shapely.geometry import Polygon
@@ -467,8 +468,11 @@ class Play(Movement):
 
     def main(self, frame, brawler):
         current_time = time.time()
+        s = time.time()
         data = self.get_main_data(frame)
-        cprint(f'Main data detected: {data}', 'INFO')
+        e = time.time()
+        cprint(f'Main data detected in {round(e-s, 2)}s: {data}', 'INFO')
+        walls = self.last_walls_data
         if self.should_detect_walls and current_time - self.time_since_walls_checked > self.walls_treshold:
 
             tile_data = self.get_tile_data(frame)
@@ -483,6 +487,7 @@ class Play(Movement):
 
         data = self.validate_game_data(data)
         self.track_no_detections(data)
+
         if not data:
             self.time_since_movement_change = time.time()
             for key in ['w', 'a', 'd', 's']:
@@ -496,6 +501,14 @@ class Play(Movement):
                     cprint('Haven\'t detected the player in a while - proceeding.', 'ACTION')
                     pyautogui.press('q')
                     self.time_since_last_proceeding = time.time()
+            self.scene_data.append({
+                'frame_number': len(self.scene_data),
+                'frame': np.array(frame),
+                'player': data.get('player', []) if data else [],
+                'enemy': data.get('enemy', []) if data else [],
+                'wall': data.get('wall', []) if data else [],
+                'movement': '',
+            })
             return
         self.time_since_last_proceeding = time.time()
         self.is_hypercharge_ready = False
@@ -509,20 +522,22 @@ class Play(Movement):
 
         movement = self.loop(brawler, data, current_time)
 
-        if data:
-            # Record scene data
-            self.scene_data.append({
-                'frame_number': len(self.scene_data),
-                'player': data.get('player', []),
-                'enemy': data.get('enemy', []),
-                'wall': data.get('wall', []),
-                'movement': movement,
-            })
+        # Add data for visualization
+        self.scene_data.append({
+            'frame_number': len(self.scene_data),
+            'frame': np.array(frame),
+            'player': data.get('player', []) if data else [],
+            'enemy': data.get('enemy', []) if data else [],
+            'wall': data.get('wall', []) if data else [],
+            'movement': movement,
+        })
+
+        # Generate visualization every 10 recorded frames
+        if len(self.scene_data) > 0 and len(self.scene_data) % 2 == 0:
             self.generate_visualization()
 
     def generate_visualization(self, output_filename='visualization.mp4'):
         import cv2
-        import numpy as np
 
         frame_size = (1920, 1080)  # Adjust as needed
         fps = 10
@@ -532,8 +547,13 @@ class Play(Movement):
         out = cv2.VideoWriter(output_filename, fourcc, fps, frame_size)
 
         for frame_data in self.scene_data:
-            # Create a blank image
-            img = np.zeros((frame_size[1], frame_size[0], 3), np.uint8)
+            # Use the captured frame as background
+            try:
+                img = cv2.resize(frame_data['frame'], frame_size)
+                img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
+            except:
+                img = np.zeros((frame_size[1], frame_size[0], 3), np.uint8)
+                cprint(f'Frame {frame_data['frame_number'] + 1} is corrupt. Replacing with black background.', 'FAIL')
 
             # Scale factors if needed
             scale_x = frame_size[0] / 1920
@@ -547,7 +567,7 @@ class Play(Movement):
                     y1 = int(y1 * scale_y)
                     x2 = int(x2 * scale_x)
                     y2 = int(y2 * scale_y)
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (128, 128, 128), -1)  # Gray walls
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (128, 128, 128), 5)  # Gray walls
 
             if frame_data['enemy']:
                 # Draw enemies
@@ -557,7 +577,7 @@ class Play(Movement):
                     y1 = int(y1 * scale_y)
                     x2 = int(x2 * scale_x)
                     y2 = int(y2 * scale_y)
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), -1)  # Red enemies
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 5)  # Red enemies
 
             if frame_data['player']:
                 # Draw player
@@ -567,18 +587,19 @@ class Play(Movement):
                     y1 = int(y1 * scale_y)
                     x2 = int(x2 * scale_x)
                     y2 = int(y2 * scale_y)
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), -1)  # Green player
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 5)  # Green player
 
-            # Draw movement decision
             movement = frame_data['movement']
-            direction = self.movement_to_direction(movement)
-            cv2.putText(img, f'Movement: {direction}', (10, frame_size[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                        (255, 255, 255), 1)
+            if movement != '':
+                # Draw movement decision
+                direction = self.movement_to_direction(movement)
+                cv2.putText(img, f'Movement: {direction}', (10, frame_size[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                            (255, 255, 255), 1)
 
             # Write frame to video
             out.write(img)
 
-        cprint('Visualization generated.', 'INFO')
+        cprint(f'Visualization generated with {len(self.scene_data)} frames.', 'CHECK')
         out.release()
 
     @staticmethod
