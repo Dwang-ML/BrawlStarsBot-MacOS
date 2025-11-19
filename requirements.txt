@@ -5,7 +5,6 @@ opencv-python
 numpy
 onnxruntime-directml
 pyautogui
-pygetwindow
 requests
 toml
 torch
@@ -16,3 +15,5 @@ shapely
 ultralytics==8.2.31
 bettercam
 packaging
+pynput
+mss

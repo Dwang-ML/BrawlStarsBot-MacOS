@@ -1,10 +1,10 @@
 import asyncio
 import threading
 import time
+import os
 from queue import Queue, Full, Empty
 
 import pyautogui
-import pygetwindow
 
 from gui.hub import Hub
 from gui.login import login
@@ -17,7 +17,7 @@ from state_finder.main import get_state
 from time_management import TimeManagement
 from utils import ScreenshotTaker, load_toml_as_dict, current_wall_model_is_latest, api_base_url
 from utils import get_brawler_list, update_missing_brawler_ranges, update_icons, check_version, async_notify_user, \
-    update_wall_model_classes, get_latest_wall_model_file, get_latest_version, cprint
+    update_wall_model_classes, get_latest_wall_model_file, get_latest_version, cprint, focus_window
 
 pyla_version = load_toml_as_dict('./cfg/general_config.toml')['pyla_version']
 chosen_monitor = int(load_toml_as_dict('./cfg/general_config.toml')['monitor'])
@@ -158,21 +158,8 @@ def pyla_main(data):
                     if elapsed_time < time_per_frame:
                         time.sleep(time_per_frame - elapsed_time)
 
-    try:
-        window = pygetwindow.getWindowsWithTitle('BlueStacks')[0]
-        print(pygetwindow.getAllWindows())
-
-        if window.isMinimized:
-            window.restore()
-
-        try:
-            window.activate()
-        except:
-            pass
-
-        window.maximize()
-    except:
-        cprint('Couldn\'t find BlueStacks window. Using another emulator isn\'t recommended and can lead to unexpected issues.', 'WARNING')
+    cprint('Focusing BlueStacks window.', 'ACTION')
+    focus_window('BlueStacks')
 
     main = Main(
         lobby_automator=LobbyAutomation(frame_queue)

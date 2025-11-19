@@ -8,7 +8,6 @@ import json
 import aiohttp
 import requests
 import toml
-from PIL import Image
 from discord import Webhook
 import discord
 from easyocr import easyocr
@@ -320,7 +319,7 @@ def current_wall_model_is_latest() -> bool:
 
 
 def get_latest_wall_model_file():
-    #download the new model to replace the current file and also updates the tile list
+    # Download the new model to replace the current file and also updates the tile list
     url = f'https://{api_base_url}/get_wall_model_file'
     response = requests.get(url)
     if response.status_code == 200:
@@ -385,6 +384,24 @@ def cprint(text: str, tag: str):  # Color printing for clarity and aesthetic
     except Exception:
         print(text)
 
+
 def linebreak():
     columns = shutil.get_terminal_size().columns
     print('-' * columns)
+
+
+def focus_window(title: str):
+    # AppleScript to bring app to front by title
+    script = f'''
+    tell application "System Events"
+        set frontmost of the first process whose name contains "{title}" to true
+    end tell
+    '''
+    try:
+        os.system(f"osascript -e '{script}'")
+        cprint(f"Focused window: {title}", 'CHECK')
+    except Exception as e:
+        cprint(f"Failed to focus {title}: {e}", 'FAIL')
+        cprint(
+            'Check if you are using BlueStacks. BlueStacks is strongly recommended and code has been tested using BlueStacks. Other emulators may cause issues.',
+            'WARNING')
