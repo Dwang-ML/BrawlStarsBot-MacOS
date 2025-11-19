@@ -93,6 +93,9 @@ class Hub:
         self.app.geometry(f"{S(1000)}x{S(750)}")
         self.app.resizable(False, False)
 
+        # Autofocus on startup
+        self.app.after(100, lambda: (self.app.lift(), self.app.focus_force()))
+
         # For showing tooltips in Toplevel windows
         self.tooltip_window = None
 

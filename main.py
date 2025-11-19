@@ -160,6 +160,7 @@ def pyla_main(data):
 
     try:
         window = pygetwindow.getWindowsWithTitle('BlueStacks')[0]
+        print(pygetwindow.getAllWindows())
 
         if window.isMinimized:
             window.restore()

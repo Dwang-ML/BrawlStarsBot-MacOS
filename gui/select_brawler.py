@@ -18,6 +18,9 @@ class SelectBrawler:
     def __init__(self, data_setter, brawlers):
         self.app = ctk.CTk()
 
+        # Autofocus on startup
+        self.app.after(100, lambda: (self.app.lift(), self.app.focus_force()))
+
         square_size = 50
         amount_of_rows = ceil(len(brawlers) / 10) + 1
         necessary_height = (145 + amount_of_rows * square_size + (amount_of_rows - 1) * 3)
