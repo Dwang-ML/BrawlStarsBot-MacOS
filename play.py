@@ -267,7 +267,7 @@ class Play(Movement):
         return None, None
 
     def get_main_data(self, frame):
-        data = self.Detect_main_info.detect_objects(frame, conf_tresh=0.7)
+        data = self.Detect_main_info.detect_objects(frame, conf_tresh=0.8)
         return data
 
     def is_path_blocked(self, player_pos, move_direction, walls, distance=TILE_SIZE):  # Increased distance
@@ -550,7 +550,6 @@ class Play(Movement):
             # Use the captured frame as background
             try:
                 img = cv2.resize(frame_data['frame'], frame_size)
-                img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
             except:
                 img = np.zeros((frame_size[1], frame_size[0], 3), np.uint8)
                 cprint(f'Frame {frame_data['frame_number'] + 1} is corrupt. Replacing with black background.', 'FAIL')

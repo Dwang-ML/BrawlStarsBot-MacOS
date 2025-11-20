@@ -1,7 +1,6 @@
 import asyncio
 import threading
 import time
-import os
 from queue import Queue, Full, Empty
 
 import pyautogui

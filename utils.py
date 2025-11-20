@@ -54,7 +54,10 @@ class ScreenshotTaker:
         while image is None:
             try:
                 sct_img = self.sct.grab(self.sct.monitors[0])
-                image = Image.fromarray(np.array(sct_img))
+                arr = np.array(sct_img)  # BGRA
+                arr = arr[:, :, :3]       # drop alpha
+                arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)  # BGR → RGB
+                image = Image.fromarray(arr, mode='RGB')  # PIL RGB Image
             except Exception as e:
                 print(f"Error capturing screenshot: {e}")
                 image = None
