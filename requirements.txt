@@ -3,7 +3,6 @@ aiohttp
 customtkinter
 opencv-python
 numpy
-onnxruntime-directml
 pyautogui
 requests
 toml
@@ -17,3 +16,4 @@ bettercam
 packaging
 pynput
 mss
+numba

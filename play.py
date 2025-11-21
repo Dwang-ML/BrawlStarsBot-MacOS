@@ -1,6 +1,7 @@
 import math
 import random
 import time
+from numba import njit
 
 import numpy as np
 import pyautogui
@@ -8,7 +9,6 @@ from shapely import LineString
 from shapely.geometry import Polygon
 from state_finder.main import get_state
 from detect import Detect
-from state_finder.main import get_in_game_state
 from utils import load_toml_as_dict, count_hsv_pixels, cprint
 
 pyautogui.PAUSE = 0
@@ -41,14 +41,17 @@ class Movement:
         self.is_hypercharge_ready = False
 
     @staticmethod
+    @njit
     def get_enemy_pos(enemy):
         return (enemy[0] + enemy[2]) / 2, (enemy[1] + enemy[3]) / 2
 
     @staticmethod
+    @njit
     def get_player_pos(player_data):
         return (player_data[0] + player_data[2]) / 2, (player_data[1] + player_data[3]) / 2
 
     @staticmethod
+    @njit
     def get_distance(enemy_coords, player_coords):
         return math.hypot(enemy_coords[0] - player_coords[0], enemy_coords[1] - player_coords[1])
 
@@ -407,11 +410,9 @@ class Play(Movement):
         if enemy_distance > safe_range:  # Move towards the enemy
             move_horizontal = self.get_horizontal_move_key(direction_x)
             move_vertical = self.get_vertical_move_key(direction_y)
-            state = 'towards'
         else:  # Move away from the enemy
             move_horizontal = self.get_horizontal_move_key(direction_x, opposite=True)
             move_vertical = self.get_vertical_move_key(direction_y, opposite=True)
-            state = 'escape'
 
         if self.game_mode == 3:
             opposite_move = 'D' if move_horizontal == 'A' else 'A'
@@ -533,7 +534,7 @@ class Play(Movement):
         })
 
         # Generate visualization every 10 recorded frames
-        if len(self.scene_data) > 0 and len(self.scene_data) % 2 == 0:
+        if len(self.scene_data) > 0 and len(self.scene_data) % 10 == 0:
             self.generate_visualization()
 
     def generate_visualization(self, output_filename='visualization.mp4'):
@@ -555,8 +556,8 @@ class Play(Movement):
                 cprint(f'Frame {frame_data['frame_number'] + 1} is corrupt. Replacing with black background.', 'FAIL')
 
             # Scale factors if needed
-            scale_x = frame_size[0] / 1920
-            scale_y = frame_size[1] / 1080
+            scale_x = frame_size[0] / 1920 / 2 / 0.85
+            scale_y = frame_size[1] / 1080 / 2 / 0.85
 
             if frame_data['wall']:
                 # Draw walls
