@@ -16,24 +16,20 @@ class Detect:
         self.input_size = input_size
         self.model, self.device = self.load_model()
 
-
     def load_model(self):
         available_providers = ort.get_available_providers()
-        if self.preferred_device == 'gpu' or self.preferred_device == 'auto':
-            if 'CUDAExecutionProvider' in available_providers:
-                onnx_provider = 'CUDAExecutionProvider'
-                cprint('Using CUDA GPU', 'INFO')
-            elif 'DmlExecutionProvider' in available_providers:
-                onnx_provider = 'DmlExecutionProvider'
-                cprint('Using GPU', 'INFO')
-            elif 'AzureExecutionProvider' in available_providers:
-                onnx_provider = 'AzureExecutionProvider'
-            else:
-                cprint('Using CPU as no GPU provider found', 'INFO')
-                onnx_provider = 'CPUExecutionProvider'
+        cprint(f"Available ONNX providers: {available_providers}", "INFO")
 
+        if self.preferred_device == 'gpu' or self.preferred_device == 'auto':
+            if 'CoreMLExecutionProvider' in available_providers:
+                onnx_provider = 'CoreMLExecutionProvider'
+                cprint('Using CoreML / MPS GPU.', 'CHECK')
+            else:
+                onnx_provider = 'CPUExecutionProvider'
+                cprint('No GPU provider found, using CPU. CPU may be slow.', 'FAIL')
         else:
             onnx_provider = 'CPUExecutionProvider'
+            cprint('Using CPU.', 'CHECK')
 
         so = ort.SessionOptions()
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL

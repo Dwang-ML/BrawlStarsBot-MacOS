@@ -1,6 +1,6 @@
 gamemode_type = 3
 bot_uses_gadgets = "yes"
-minimum_movement_delay = 0.5
+minimum_movement_delay = 0.1
 gamemode = "brawlball"
 unstuck_movement_delay = 2.0
 unstuck_movement_hold_time = 1.5
