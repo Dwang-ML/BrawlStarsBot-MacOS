@@ -557,8 +557,9 @@ class Play(Movement):
                 cprint(f'Frame {frame_data['frame_number'] + 1} is corrupt. Replacing with black background.', 'FAIL')
 
             # Scale factors if needed
-            scale_x = frame_size[0] / 1920 / 2 / 0.85
-            scale_y = frame_size[1] / 1080 / 2 / 0.85
+            screen_width, screen_height = pyautogui.size()
+            scale_x = 0.5 * (1920/screen_width)
+            scale_y = 0.5 * (1080/screen_height)
 
             if frame_data['wall']:
                 # Draw walls
