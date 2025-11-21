@@ -4,6 +4,7 @@ customtkinter
 opencv-python
 numpy
 pyautogui
+onnxruntime
 requests
 toml
 torch

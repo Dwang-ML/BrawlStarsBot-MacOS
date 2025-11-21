@@ -473,10 +473,11 @@ class Play(Movement):
         data = self.get_main_data(frame)
         e = time.time()
         cprint(f'Main data detected in {round(e-s, 2)}s: {data}', 'INFO')
-        walls = self.last_walls_data
         if self.should_detect_walls and current_time - self.time_since_walls_checked > self.walls_treshold:
-
+            s = time.time()
             tile_data = self.get_tile_data(frame)
+            e = time.time()
+            cprint(f'New wall data detected in {round(e - s, 2)}s.', 'INFO')
 
             walls = self.process_tile_data(tile_data)
 
