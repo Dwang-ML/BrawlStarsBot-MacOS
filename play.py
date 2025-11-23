@@ -472,7 +472,7 @@ class Play(Movement):
         s = time.time()
         data = self.get_main_data(frame)
         e = time.time()
-        cprint(f'Main data detected in {round(e-s, 2)}s: {data}', 'INFO')
+        cprint(f'Main data detected in {round(e - s, 2)}s: {data}', 'INFO')
         if self.should_detect_walls and current_time - self.time_since_walls_checked > self.walls_treshold:
             s = time.time()
             tile_data = self.get_tile_data(frame)
@@ -552,14 +552,15 @@ class Play(Movement):
             # Use the captured frame as background
             try:
                 img = cv2.resize(frame_data['frame'], frame_size)
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)  # Convert to BGR as cv2 expects it
             except:
                 img = np.zeros((frame_size[1], frame_size[0], 3), np.uint8)
                 cprint(f'Frame {frame_data['frame_number'] + 1} is corrupt. Replacing with black background.', 'FAIL')
 
             # Scale factors if needed
             screen_width, screen_height = pyautogui.size()
-            scale_x = 0.5 * (1920/screen_width)
-            scale_y = 0.5 * (1080/screen_height)
+            scale_x = 0.5 * (1920 / screen_width)
+            scale_y = 0.5 * (1080 / screen_height)
 
             if frame_data['wall']:
                 # Draw walls
