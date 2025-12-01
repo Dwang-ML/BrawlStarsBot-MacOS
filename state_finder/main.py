@@ -93,8 +93,12 @@ def find_game_result(screenshot):
         raise TypeError("Expected a numpy.ndarray, but got {}".format(type(screenshot)))
 
     # Effectuez le recadrage directement sur l'array numpy
-    x1, y1, x2, y2 = crop_region
-    screenshot = screenshot[y1:y2, x1:x2]
+    # x1, y1, x2, y2 = crop_region
+    # x1 = x1 * 2
+    # y1 = y1 * 2
+    # x2 = x2 * 2
+    # y2 = y2 * 2
+    # screenshot = screenshot[y1:y2, x1:x2]
 
     # Appliquez l'OCR
     result = reader.readtext(screenshot)

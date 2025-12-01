@@ -122,7 +122,7 @@ class StageManager:
 
         if value >= push_current_brawler_till:
             if len(self.brawlers_pick_data) <= 1:
-                print('Brawler reached required trophies/mastery. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
+                cprint('Brawler reached required trophies. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
                 time.sleep(10 ** 5)
                 loop = asyncio.new_event_loop()
                 screenshot = self.Screenshot.take()
@@ -207,7 +207,7 @@ class StageManager:
 
                 if value >= push_current_brawler_till:
                     if len(self.brawlers_pick_data) <= 1:
-                        print('Brawler reached required trophies/mastery. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
+                        cprint('Brawler reached required trophies. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
                         loop = asyncio.new_event_loop()
                         screenshot = self.Screenshot.take()
                         loop.run_until_complete(async_notify_user('completed', screenshot))

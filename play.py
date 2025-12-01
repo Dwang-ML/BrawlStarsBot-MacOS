@@ -623,4 +623,4 @@ class Play(Movement):
         }
         movement = movement.lower()
         movement = ''.join(sorted(movement))
-        return mapping.get(movement, 'idle' if movement == '' else movement)
+        return mapping.get(movement, 'Idle' if movement == '' else movement)
