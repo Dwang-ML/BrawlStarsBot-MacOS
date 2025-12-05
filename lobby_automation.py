@@ -21,7 +21,24 @@ class LobbyAutomation:
         linebreak()
         # Process screenshot and crop for faster detection time
         screenshot = frame
-        screenshot = screenshot.crop((420 * 2, 400 * 2, 1050 * 2, 580 * 2))
+        w, h = screenshot.size
+
+        # Proportional crop for consistency across devices
+        left_pct = 0.2
+        top_pct = 0.33
+        right_pct = 0.8
+        bottom_pct = 0.66
+
+        # Convert to pixel coordinates
+        left = int(w * left_pct)
+        top = int(h * top_pct)
+        right = int(w * right_pct)
+        bottom = int(h * bottom_pct)
+
+        # Crop
+        screenshot = screenshot.crop((left, top, right, bottom))
+
+        # OCR
         text = extract_text_and_positions(np.array(screenshot))
 
         # Check for idle
