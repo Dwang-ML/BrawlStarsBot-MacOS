@@ -13,7 +13,7 @@ from lobby_automation import LobbyAutomation
 from state_finder.main import get_state
 from trophy_observer import TrophyObserver
 from utils import find_template_center, extract_text_and_positions, load_toml_as_dict, async_notify_user, \
-    save_brawler_data, cprint
+    save_brawler_data, cprint, click, key_press
 
 user_id = load_toml_as_dict('cfg/general_config.toml')['discord_id']
 debug = load_toml_as_dict('cfg/general_config.toml')['super_debug'] == 'yes'
@@ -86,12 +86,12 @@ class StageManager:
         for key in list(data.keys()):
             if key.replace(' ', '') in ['brawl', 'brawlstars', 'stars']:
                 x, y = data[key]['center']
-                pyautogui.click(x, y)
+                click(x, y)
                 return
 
         x, y = self.lobby_config['lobby']['brawl_stars_icon'][0] * width_ratio, \
                self.lobby_config['lobby']['brawl_stars_icon'][1] * height_ratio
-        pyautogui.click(x, y)
+        click(x, y)
 
     @staticmethod
     def validate_trophies(trophies_string):
@@ -150,7 +150,7 @@ class StageManager:
                     cprint('Trying to reach the lobby to switch brawler', 'INFO')
 
                 while current_state != 'lobby':
-                    pyautogui.press('q')
+                    key_press(12)  # Press Q
                     cprint('Pressed Q to return to lobby', 'ACTION')
                     time.sleep(1)
                 self.Lobby_automation.select_brawler(next_brawler_name)
@@ -158,7 +158,7 @@ class StageManager:
                 cprint('Next brawler is in manual mode, waiting 10 seconds to let user switch.', 'INFO')
 
         # q btn is over the start btn
-        pyautogui.press('q')
+        key_press(12)  # Press Q
         cprint('Pressed Q to start a match.', 'ACTION')
 
     def click_brawl_stars(self, frame):
@@ -166,7 +166,7 @@ class StageManager:
         detection = find_template_center(screenshot, self.brawl_stars_icon)
         if detection:
             x, y = detection
-            pyautogui.click(x=x + 50, y=y)
+            click(x=x + 50, y=y)
 
     def click_star_drop(self):
         if self.long_press_star_drop == 'yes':
@@ -174,7 +174,7 @@ class StageManager:
             time.sleep(10)
             pyautogui.keyUp('q')
         else:
-            pyautogui.press('q')
+            key_press(12)  # Press Q
 
     def end_game(self):
         screenshot = self.Screenshot.take()
@@ -216,7 +216,7 @@ class StageManager:
                             os.remove('latest_brawler_data.json')
                         time.sleep(10 ** 5)
                         return
-            pyautogui.press('q')
+            key_press(12)  # Press Q
             cprint('Game has ended.', 'INFO')
             cprint('Pressing Q to continue.', 'ACTION')
             time.sleep(3)
@@ -226,21 +226,21 @@ class StageManager:
 
     @staticmethod
     def quit_shop():
-        pyautogui.click(100, 60)
+        click(100, 60)
 
     @staticmethod
     def click_coords(coords, in_between=None):
         for coord in coords:
-            pyautogui.click(coord)
+            click(coord[0], coord[1])
 
             if in_between:
-                pyautogui.click(in_between)
+                click(in_between[0], in_between[1])
 
     def close_pop_up(self):
         screenshot = self.Screenshot.take()
         popup_location = find_template_center(screenshot, self.close_popup_icon)
         if popup_location:
-            pyautogui.click(popup_location)
+            click(popup_location[0], popup_location[1])
 
     def do_state(self, state, data=None):
         if data:

@@ -9,11 +9,23 @@ from shapely import LineString
 from shapely.geometry import Polygon
 from state_finder.main import get_state
 from detect import Detect
-from utils import load_toml_as_dict, count_hsv_pixels, cprint
+from utils import load_toml_as_dict, count_hsv_pixels, cprint, key_press
 
 pyautogui.PAUSE = 0
 
 TILE_SIZE = 70
+
+KEYMAP = {
+    "w": 13,
+    "a": 0,
+    "s": 1,
+    "d": 2,
+    "space": 49,
+    "up": 126,
+    "down": 125,
+    "left": 123,
+    "right": 124,
+}
 
 
 class Movement:
@@ -75,15 +87,15 @@ class Movement:
 
     @staticmethod
     def attack():
-        pyautogui.press('e')
+        key_press(14)  # Press E
 
     @staticmethod
     def use_hypercharge():
-        pyautogui.press('h')
+        key_press(4)  # Press H
 
     @staticmethod
     def use_gadget():
-        pyautogui.press('g')
+        key_press(5)  # Press G
 
     @staticmethod
     def get_random_attack_key():
@@ -327,10 +339,10 @@ class Play(Movement):
             keys_to_keyUp.append(key)
 
         for key in keys_to_keyDown:
-            pyautogui.keyDown(key)
+            key_press(KEYMAP[key])
 
         for key in keys_to_keyUp:
-            pyautogui.keyUp(key)
+            key_press(KEYMAP[key])
 
         self.keys_hold = keys_to_keyDown
 
@@ -493,7 +505,7 @@ class Play(Movement):
         if not data:
             self.time_since_movement_change = time.time()
             for key in ['w', 'a', 'd', 's']:
-                pyautogui.keyUp(key)
+                key_press(KEYMAP[key])
             self.keys_hold = []
             if current_time - self.time_since_last_proceeding > self.no_detection_proceed_delay:
                 current_state = get_state(frame)
@@ -501,7 +513,7 @@ class Play(Movement):
                     self.time_since_last_proceeding = current_time
                 else:
                     cprint('Haven\'t detected the player in a while - proceeding.', 'ACTION')
-                    pyautogui.press('q')
+                    key_press(12)  # Press Q
                     self.time_since_last_proceeding = time.time()
             self.scene_data.append({
                 'frame_number': len(self.scene_data),

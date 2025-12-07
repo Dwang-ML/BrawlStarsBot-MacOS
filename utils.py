@@ -17,6 +17,8 @@ from PIL import Image
 from packaging import version
 import mss
 import time
+from Quartz import CGEventCreateKeyboardEvent, CGEventPost
+from Quartz import kCGHIDEventTap
 
 reader = easyocr.Reader(['en'])  # Assuming English text, you can modify the list to include other languages.
 
@@ -55,7 +57,7 @@ class ScreenshotTaker:
             try:
                 sct_img = self.sct.grab(self.sct.monitors[0])
                 arr = np.array(sct_img)  # BGRA
-                arr = arr[:, :, :3]       # drop alpha
+                arr = arr[:, :, :3]  # drop alpha
                 arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)  # BGR → RGB
                 image = Image.fromarray(arr, mode='RGB')  # PIL RGB Image
             except Exception as e:
@@ -401,10 +403,23 @@ def focus_window(title: str):
     end tell
     '''
     try:
-        os.system(f"osascript -e '{script}'")
-        cprint(f"Focused window: {title}", 'CHECK')
+        if os.system(f"osascript -e '{script}' 2>/dev/null") == 0:  # Pipe the error into /dev/null to hide them
+            cprint(f"Focused window: {title}", 'CHECK')
+        else:
+            cprint(f"Failed to focus {title}. Window not detected or other errors...", 'FAIL')
+            cprint(
+                'Check if you are using BlueStacks. BlueStacks is strongly recommended and code has been tested using BlueStacks. Other emulators may cause issues.',
+                'WARNING')
     except Exception as e:
-        cprint(f"Failed to focus {title}: {e}", 'FAIL')
-        cprint(
-            'Check if you are using BlueStacks. BlueStacks is strongly recommended and code has been tested using BlueStacks. Other emulators may cause issues.',
-            'WARNING')
+        cprint(f'Process failed: {e}', 'ERROR')
+    linebreak()
+
+
+def key_press(mac_virtual_keycode):  # Fast key presses using Quartz
+    # Key down
+    event_down = CGEventCreateKeyboardEvent(None, mac_virtual_keycode, True)
+    CGEventPost(kCGHIDEventTap, event_down)
+
+    # Key up
+    event_up = CGEventCreateKeyboardEvent(None, mac_virtual_keycode, False)
+    CGEventPost(kCGHIDEventTap, event_up)

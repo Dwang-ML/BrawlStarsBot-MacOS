@@ -5,7 +5,7 @@ import torch
 from PIL import Image
 import onnxruntime as ort
 from ultralytics.utils import ops
-from utils import load_toml_as_dict
+from utils import load_toml_as_dict, cprint, linebreak
 
 class Detect:
     def __init__(self, model_path, ignore_classes=None, classes=None, input_size=(640, 640)):
@@ -14,6 +14,7 @@ class Detect:
         self.classes = classes
         self.ignore_classes = ignore_classes if ignore_classes else []
         self.input_size = input_size
+        cprint(f'Loading {model_path.split('/')[-1].split('.')[0]}...', 'ACTION')
         self.model, self.device = self.load_model()
 
     def load_model(self):
@@ -29,11 +30,13 @@ class Detect:
                 cprint('No GPU provider found, using CPU. CPU may be slow.', 'FAIL')
         else:
             onnx_provider = 'CPUExecutionProvider'
-            cprint('Using CPU.', 'CHECK')
+            cprint('Using CPU..', 'CHECK')
 
         so = ort.SessionOptions()
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        so.log_severity_level = 3  # Only show errors and ignore warnings for clean output
         model = ort.InferenceSession(self.model_path, sess_options=so, providers=[onnx_provider])
+        linebreak()
 
         return model, onnx_provider
 
