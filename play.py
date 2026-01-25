@@ -149,7 +149,7 @@ class Play(Movement):
         super().__init__()
 
         self.specific_game_data = {}
-        self.Detect_main_info = Detect(main_info_model, classes=['enemy', 'player', 'teammate'])
+        self.Detect_main_info = Detect(main_info_model, classes=['enemy', 'teammate', 'player'])
         self.Detect_specific_info = Detect(specific_info_model,
                                            classes=['ammo', 'ball', 'damage_taken', 'defeat', 'draw',
                                                     'enemy_health_bar', 'enemy_position', 'gadget', 'gem',
