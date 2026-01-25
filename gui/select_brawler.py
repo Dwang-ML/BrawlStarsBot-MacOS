@@ -20,7 +20,8 @@ class SelectBrawler:
         self.app = ctk.CTk()
 
         # Autofocus on startup
-        self.app.after(100, lambda: (self.app.lift(), self.app.focus_force()))
+        self.app.lift()
+        self.app.focus_force()
 
         square_size = 50
         amount_of_rows = ceil(len(brawlers) / 10) + 1
