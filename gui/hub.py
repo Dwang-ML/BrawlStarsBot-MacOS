@@ -94,7 +94,8 @@ class Hub:
         self.app.resizable(False, False)
 
         # Autofocus on startup
-        self.app.after(100, lambda: (self.app.lift(), self.app.focus_force()))
+        self.app.lift()
+        self.app.focus_force()
 
         # For showing tooltips in Toplevel windows
         self.tooltip_window = None

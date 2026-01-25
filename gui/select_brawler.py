@@ -88,6 +88,9 @@ class SelectBrawler:
 
     def start_bot(self):
         self.data_setter(self.brawlers_data)
+
+        self.app.update()
+        self.app.quit()
         self.app.destroy()
 
     def load_brawler_config(self):

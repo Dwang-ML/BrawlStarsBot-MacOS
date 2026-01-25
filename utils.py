@@ -371,10 +371,10 @@ def cprint(text: str, tag: str):  # Color printing for clarity and aesthetic
         hex_color = hex_color.lstrip("#")
         r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
-        t = int(time.time())
-        hours = (t % 86400) // 3600
-        minutes = (t % 3600) // 60
-        seconds = t % 60
+        t = time.localtime()
+        hours = t.tm_hour
+        minutes = t.tm_min
+        seconds = t.tm_sec
 
         time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 

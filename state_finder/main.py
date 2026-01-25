@@ -3,7 +3,6 @@ import random
 import sys
 import time
 
-import mss
 import cv2
 from easyocr import easyocr
 import numpy as np
@@ -65,7 +64,7 @@ def is_template_in_region(image, template_path, region):  # With scale invariati
     if best_val >= 0.85:
         cprint(f"Best match confidence: {best_val:.4f} at scale {best_scale:.2f}", 'INFO')
         cprint(f"Template FOUND in image - {template_path.split('/')[-1]}", 'CHECK')
-    return best_val >= 0.8
+    return best_val >= 0.85
 
 
 crop_region = load_toml_as_dict("./cfg/lobby_config.toml")['lobby']['trophy_observer']
