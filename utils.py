@@ -61,7 +61,7 @@ class ScreenshotTaker:
                 arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)  # BGR → RGB
                 image = Image.fromarray(arr, mode='RGB')  # PIL RGB Image
             except Exception as e:
-                print(f"Error capturing screenshot: {e}")
+                cprint(f"Error capturing screenshot: {e}", 'ERROR')
                 image = None
         return image
 
@@ -154,11 +154,11 @@ def update_missing_brawler_ranges(brawlers):
                 brawler_ranges[brawler] = range_values
                 # Save the updated ranges to the TOML file
                 save_dict_as_toml(brawler_ranges, "cfg/ranges.toml")
-                print(f"Added range for brawler '{brawler}': {range_values}")
+                cprint(f"Added range for brawler '{brawler}': {range_values}", 'CHECK')
                 # Download the brawler icon
                 save_brawler_icon(brawler)
             else:
-                print(f"Could not find range for brawler '{brawler}'")
+                cprint(f"Could not find range for brawler '{brawler}'", 'FAIL')
         if not os.path.exists(f"./api/assets/brawler_icons/{brawler}.png"):
             save_brawler_icon(brawler)
 
@@ -170,7 +170,7 @@ def get_brawler_range(brawler_name):
         data = response.json()
         return data.get('range', [])
     else:
-        print(f"Error fetching range for '{brawler_name}': {response.status_code} - {response.text}")
+        cprint(f"Error fetching range for '{brawler_name}': {response.status_code} - {response.text}", 'ERROR')
         return None
 
 
@@ -181,7 +181,7 @@ def save_brawler_icon(brawler_name):
     brawlers_url = "https://api.brawlapi.com/v1/brawlers"
     response = requests.get(brawlers_url)
     if response.status_code != 200:
-        print(f"Failed to fetch brawlers from API: {response.status_code}")
+        cprint(f"Failed to fetch brawlers from API: {response.status_code}", 'FAIL')
         return
     brawlers_data = response.json()['list']
 
@@ -196,11 +196,11 @@ def save_brawler_icon(brawler_name):
             if img_response.status_code == 200:
                 image = Image.open(BytesIO(img_response.content))
                 image.save(f"api/assets/brawler_icons/{brawler_name_clean}.png")
-                print(f"Saved icon for brawler '{brawler_name}'")
+                cprint(f"Saved icon for brawler '{brawler_name}'", 'CHECK')
             else:
-                print(f"Failed to download icon for '{brawler_name}'")
+                cprint(f"Failed to download icon for '{brawler_name}'", 'FAIL')
             return
-    print(f"Icon not found for brawler '{brawler_name}'")
+    cprint(f"Icon not found for brawler '{brawler_name}'", 'WARNING')
 
 
 def update_icons():
@@ -212,9 +212,9 @@ def update_icons():
         if response.status_code == 200:
             with open(f'./state_finder/images_to_detect/{icon_name}', 'wb') as f:
                 f.write(response.content)
-            print(f"Downloaded and updated {icon_name}")
+            cprint(f"Downloaded and updated {icon_name}", 'CHECK')
         else:
-            print(f"Failed to download {icon_name}. Status code: {response.status_code}")
+            cprint(f"Failed to download {icon_name}. Status code: {response.status_code}", 'FAIL')
 
 
 def click(x, y):
@@ -240,18 +240,18 @@ def check_version():
         if latest_version:
             current_version = load_toml_as_dict("cfg/general_config.toml").get('pyla_version', '')
             if version.parse(current_version) < version.parse(latest_version):
-                print(
-                    f"Warning: (ignore if you're using early access) You are not using the latest public version of Pyla. \nCheck the discord for the latest download link.")
+                cprint(
+                    f"Warning: (ignore if you're using early access) You are not using the latest public version of Pyla. \nCheck the discord for the latest download link.", 'WARNING')
         else:
-            print(
-                "Error, couldn't get the version, please check your internet connection or go ask for help in the discord.")
+            cprint(
+                "Error, couldn't get the version, please check your internet connection or go ask for help in the discord.", 'ERROR')
 
 
 async def async_notify_user(message_type: str | None = None, screenshot: Image = None) -> None:
     user_id = load_toml_as_dict("cfg/general_config.toml")["discord_id"]
     webhook_url = load_toml_as_dict("cfg/general_config.toml")["personal_webhook"]
     if not webhook_url:
-        print("Couldn't notify: no webhook configured.")
+        cprint("Couldn't notify: no webhook configured.", 'WARNING')
         return
 
     if message_type == "completed":
@@ -276,7 +276,7 @@ async def async_notify_user(message_type: str | None = None, screenshot: Image =
     # Send the embed
     async with aiohttp.ClientSession() as session:
         webhook = Webhook.from_url(webhook_url, session=session)
-        print("sending webhook")
+        cprint("Sending webhook...", 'ACTION')
         await webhook.send(embed=embed, file=file, username="Pyla notifier", content=ping)
 
 
@@ -330,9 +330,9 @@ def get_latest_wall_model_file():
     if response.status_code == 200:
         with open("./models/tileDetector.onnx", "wb") as file:
             file.write(response.content)
-        print("Downloaded the latest wall model.")
+        cprint("Downloaded the latest wall model.", 'CHECK')
     else:
-        print(f"Failed to download the latest wall model. Status code: {response.status_code}")
+        cprint(f"Failed to download the latest wall model. Status code: {response.status_code}", 'FAIL')
 
 
 def get_latest_wall_model_classes():
@@ -350,11 +350,11 @@ def update_wall_model_classes():
     current_classes = load_toml_as_dict("cfg/bot_config.toml")["wall_model_classes"]
     if classes:
         if classes != current_classes:
-            print("New wall model classes found. Updating...")
+            cprint("New wall model classes found. Updating...", 'ACTION')
             update_toml_file("cfg/bot_config.toml", {"wall_model_classes": classes})
-            print("Updated the wall model classes.")
+            cprint("Updated the wall model classes.", 'CHECK')
     else:
-        print("Failed to update the wall model classes, please report this error.")
+        cprint("Failed to update the wall model classes, please report this error.", 'FAIL')
 
 
 def cprint(text: str, tag: str):  # Color printing for clarity and aesthetic
