@@ -90,9 +90,19 @@ class SelectBrawler:
     def start_bot(self):
         self.data_setter(self.brawlers_data)
 
-        self.app.update()
-        self.app.quit()
-        self.app.destroy()
+        # Manual closing simulation
+        if hasattr(self.app, 'wm_protocol'):
+            # Call the WM_DELETE_WINDOW handler if it exists
+            self.app.wm_protocol("WM_DELETE_WINDOW", lambda: None)
+
+        # Send close event
+        self.app.event_generate("<Destroy>", when="tail")
+
+        # Force update to process event
+        self.app.update_idletasks()
+
+        # Break the mainloop by setting a flag
+        self._mainloop_should_exit = True
 
     def load_brawler_config(self):
         # open file select dialog to select a json file
