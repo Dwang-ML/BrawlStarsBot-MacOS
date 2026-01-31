@@ -13,9 +13,6 @@ discord.py
 easyocr
 shapely
 ultralytics==8.2.31
-bettercam
 packaging
-pynput
-mss
 numba
-pyobjc
+pure-python-adb

@@ -1,9 +1,6 @@
 import hashlib
-import io
 import os
-import shutil
 from io import BytesIO
-from pynput.mouse import Controller, Button
 import json
 import aiohttp
 import requests
@@ -15,15 +12,73 @@ import cv2
 import numpy as np
 from PIL import Image
 from packaging import version
-import mss
 import time
-from Quartz import CGEventCreateKeyboardEvent, CGEventPost
-from Quartz import kCGHIDEventTap
+import subprocess
+import sys
+import shutil
+from ppadb.client import Client
 
-reader = easyocr.Reader(['en'])  # Assuming English text, you can modify the list to include other languages.
-
-mouse = Controller()
+reader = easyocr.Reader(['en'])
 api_base_url = "localhost"
+device_serial = toml.load("./cfg/general_config.toml")['bluestacks_serial']
+
+
+def verify_adb_installs():
+    if shutil.which('brew') is None:
+        print('Homebrew not found. Installing Homebrew...')
+        subprocess.run(
+            ['/bin/bash', '-c',
+             '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)'],
+            check=True
+        )
+    else:
+        print('Homebrew already installed.')
+
+    if shutil.which('adb') is None:
+        print('ADB not found. Installing via Homebrew...')
+        subprocess.run(['brew', 'install', 'android-platform-tools'])
+    else:
+        print('ADB already installed.')
+
+
+def connect_adb():
+    print('Bridging connection using adb...')
+    subprocess.run(['adb', 'kill-server'])
+    subprocess.run(['adb', 'start-server'])
+    subprocess.run(['adb', 'connect', f'{device_serial}'])
+    output = subprocess.run(['adb', 'devices'], capture_output=True, text=True)
+    devices = output.stdout.strip().split('\n')[1:]
+    print('Bridged devices:')
+    for id, d in enumerate(devices):
+        if d.strip() == "":
+            continue
+        serial, status = d.split()
+        print(f'{id + 1}. {serial} - {status}')
+
+    print('Connecting via python ppadb...')
+    client = Client(host='127.0.0.1', port=5037)
+    devices = client.devices()
+
+    if not devices:
+        print('No devices found. Make sure BlueStacks is running and ADB is enabled.')
+        sys.exit()
+
+    device = devices[0]
+    print('Connected to BlueStacks:', device.serial)
+
+    print('Locking resolution, dpi and settings...')
+    device.shell('wm size 1920x1080')
+    device.shell('wm density 320')
+    device.shell('settings put system accelerometer_rotation 0')
+    device.shell('settings put system user_rotation 0')
+    print('Resolution, DPI, and orientation locked.')
+
+    print('Connection successful!')
+    return device
+
+
+verify_adb_installs()
+device = connect_adb()
 
 
 def extract_text_and_positions(image_path):
@@ -48,22 +103,135 @@ def extract_text_and_positions(image_path):
 
 
 class ScreenshotTaker:
-    def __init__(self):
-        self.sct = mss.mss()
-
     def take(self):
         image = None
-        while image is None:
+        max_attempts = 3
+
+        for attempt in range(max_attempts):
             try:
-                sct_img = self.sct.grab(self.sct.monitors[0])
-                arr = np.array(sct_img)  # BGRA
-                arr = arr[:, :, :3]  # drop alpha
-                arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)  # BGR → RGB
-                image = Image.fromarray(arr, mode='RGB')  # PIL RGB Image
+                result = subprocess.run(
+                    ['adb', '-s', device_serial, 'exec-out', 'screencap -p'],
+                    capture_output=True,
+                    timeout=1.0
+                )
+
+                if result.returncode == 0 and result.stdout:
+                    try:
+                        image = Image.open(BytesIO(result.stdout))
+                        if image.mode != 'RGB':
+                            image = image.convert('RGB')
+                        return image
+                    except Exception as e:
+                        continue
+
+            except subprocess.TimeoutExpired:
+                continue
             except Exception as e:
-                cprint(f"Error capturing screenshot: {e}", 'ERROR')
-                image = None
+                cprint(f"Error on attempt {attempt + 1}: {e}", 'ERROR')
+                continue
+
+        if image is None:
+            try:
+                result = subprocess.run(
+                    ['adb', '-s', device_serial, 'exec-out', 'screencap'],
+                    capture_output=True,
+                    timeout=1.0
+                )
+
+                if result.returncode == 0 and result.stdout:
+                    try:
+                        image = Image.open(BytesIO(result.stdout))
+                        if image.mode != 'RGB':
+                            image = image.convert('RGB')
+                        return image
+                    except:
+                        image = self._parse_raw_screencap(result.stdout)
+                        if image:
+                            return image
+
+            except Exception as e:
+                cprint(f"Raw format attempt also failed: {e}", 'ERROR')
+
         return image
+
+    def _parse_raw_screencap(self, data):
+        """Parse raw screencap format"""
+        if not data or len(data) < 100:
+            return None
+
+        formats_to_try = [
+            # PNG
+            lambda d: Image.open(BytesIO(d)),
+
+            # Raw BGRA with 12-byte header
+            lambda d: self._parse_bgra(d, header_size=12),
+
+            # Raw BGRA with 20-byte header
+            lambda d: self._parse_bgra(d, header_size=20),
+
+            # Raw RGBA with 12-byte header
+            lambda d: self._parse_rgba(d, header_size=12),
+
+            # Raw RGBA with 20-byte header
+            lambda d: self._parse_rgba(d, header_size=20),
+
+            # Raw RGB (no alpha)
+            lambda d: self._parse_rgb(d, header_size=12),
+
+            # Raw RGB (no alpha)
+            lambda d: self._parse_rgb(d, header_size=20),
+        ]
+
+        for parser in formats_to_try:
+            try:
+                image = parser(data)
+                if image:
+                    if image.mode != 'RGB':
+                        image = image.convert('RGB')
+                    return image
+            except:
+                continue
+
+        return None
+
+    def _parse_bgra(self, data, header_size=12):
+        """Parse BGRA format"""
+        width, height = 1920, 1080
+        required_size = header_size + (width * height * 4)
+
+        if len(data) >= required_size:
+            pixel_data = data[header_size:header_size + width * height * 4]
+            arr = np.frombuffer(pixel_data, dtype=np.uint8)
+            arr = arr.reshape((height, width, 4))
+            rgb = arr[:, :, [2, 1, 0]]
+            return Image.fromarray(rgb, 'RGB')
+        return None
+
+    def _parse_rgba(self, data, header_size=12):
+        """Parse RGBA format"""
+        width, height = 1920, 1080
+        required_size = header_size + (width * height * 4)
+
+        if len(data) >= required_size:
+            pixel_data = data[header_size:header_size + width * height * 4]
+            arr = np.frombuffer(pixel_data, dtype=np.uint8)
+            arr = arr.reshape((height, width, 4))
+            rgb = arr[:, :, :3]
+            return Image.fromarray(rgb, 'RGB')
+        return None
+
+    def _parse_rgb(self, data, header_size=12):
+        """Parse RGB format"""
+        width, height = 1920, 1080
+        required_size = header_size + (width * height * 3)
+
+        if len(data) >= required_size:
+            pixel_data = data[header_size:header_size + width * height * 3]
+            arr = np.frombuffer(pixel_data, dtype=np.uint8)
+            arr = arr.reshape((height, width, 3))
+            rgb = arr[:, :, [2, 1, 0]]
+            return Image.fromarray(rgb, 'RGB')
+        return None
 
 
 def count_hsv_pixels(pil_image, low_hsv, high_hsv):
@@ -220,8 +388,7 @@ def update_icons():
 def click(x, y):
     x = int(x)
     y = int(y)
-    mouse.position = (x, y)
-    mouse.click(Button.left, 1)
+    device.shell(f'input tap {x} {y}')
 
 
 def get_latest_version():
@@ -241,10 +408,12 @@ def check_version():
             current_version = load_toml_as_dict("cfg/general_config.toml").get('pyla_version', '')
             if version.parse(current_version) < version.parse(latest_version):
                 cprint(
-                    f"Warning: (ignore if you're using early access) You are not using the latest public version of Pyla. \nCheck the discord for the latest download link.", 'WARNING')
+                    f"Warning: (ignore if you're using early access) You are not using the latest public version of Pyla. \nCheck the discord for the latest download link.",
+                    'WARNING')
         else:
             cprint(
-                "Error, couldn't get the version, please check your internet connection or go ask for help in the discord.", 'ERROR')
+                "Error, couldn't get the version, please check your internet connection or go ask for help in the discord.",
+                'ERROR')
 
 
 async def async_notify_user(message_type: str | None = None, screenshot: Image = None) -> None:
@@ -264,7 +433,7 @@ async def async_notify_user(message_type: str | None = None, screenshot: Image =
         status_line = f"Pyla completed brawler goal for {message_type}!"
         ping = f"<@{user_id}>"
 
-    buffer = io.BytesIO()
+    buffer = BytesIO()
     screenshot.save(buffer, format="PNG")
     buffer.seek(0)
     file = discord.File(buffer, filename="screenshot.png")
@@ -413,13 +582,3 @@ def focus_window(title: str):
     except Exception as e:
         cprint(f'Process failed: {e}', 'ERROR')
     linebreak()
-
-
-def key_press(mac_virtual_keycode):  # Fast key presses using Quartz
-    # Key down
-    event_down = CGEventCreateKeyboardEvent(None, mac_virtual_keycode, True)
-    CGEventPost(kCGHIDEventTap, event_down)
-
-    # Key up
-    event_up = CGEventCreateKeyboardEvent(None, mac_virtual_keycode, False)
-    CGEventPost(kCGHIDEventTap, event_up)
