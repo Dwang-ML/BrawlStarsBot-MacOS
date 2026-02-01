@@ -13,7 +13,7 @@ from lobby_automation import LobbyAutomation
 from state_finder.main import get_state
 from trophy_observer import TrophyObserver
 from utils import find_template_center, extract_text_and_positions, load_toml_as_dict, async_notify_user, \
-    save_brawler_data, cprint, click, key_press
+    save_brawler_data, cprint, click
 
 user_id = load_toml_as_dict('cfg/general_config.toml')['discord_id']
 debug = load_toml_as_dict('cfg/general_config.toml')['super_debug'] == 'yes'
@@ -150,16 +150,14 @@ class StageManager:
                     cprint('Trying to reach the lobby to switch brawler', 'INFO')
 
                 while current_state != 'lobby':
-                    key_press(12)  # Press Q
-                    cprint('Pressed Q to return to lobby', 'ACTION')
+                    click(1623, 968)
                     time.sleep(1)
                 self.Lobby_automation.select_brawler(next_brawler_name)
             else:
                 cprint('Next brawler is in manual mode, waiting 10 seconds to let user switch.', 'INFO')
 
-        # q btn is over the start btn
-        key_press(12)  # Press Q
-        cprint('Pressed Q to start a match.', 'ACTION')
+        click(1623, 968)
+        cprint('Starting a match.', 'ACTION')
 
     def click_brawl_stars(self, frame):
         screenshot = frame.crop((50, 4, 900, 31))
@@ -174,7 +172,7 @@ class StageManager:
             time.sleep(10)
             pyautogui.keyUp('q')
         else:
-            key_press(12)  # Press Q
+            click(1623, 968)
 
     def end_game(self):
         screenshot = self.Screenshot.take()
@@ -216,7 +214,7 @@ class StageManager:
                             os.remove('latest_brawler_data.json')
                         time.sleep(10 ** 5)
                         return
-            key_press(12)  # Press Q
+            click(1623, 968)
             cprint('Game has ended.', 'INFO')
             cprint('Pressing Q to continue.', 'ACTION')
             time.sleep(3)

@@ -6,7 +6,7 @@ from queue import Empty
 import numpy as np
 import pyautogui
 from utils import click
-from utils import extract_text_and_positions, ScreenshotTaker, load_toml_as_dict
+from utils import extract_text_and_positions, ScreenshotTaker, scroll_up
 
 reader = easyocr.Reader(['en'])
 
@@ -75,48 +75,15 @@ class LobbyAutomation:
         linebreak()
         cprint('SELECTING BRAWLER', 'INFO')
 
-        # Retrieve screenshot
-        cprint('Waiting for screenshot...', 'INFO')
-        ss_text = []
-        while True:
-            time.sleep(0.5)
-
-            # Retrieve screenshot
-            screenshot = self.frame_queue.get(timeout=1)
-            screenshot = screenshot.resize((int(screenshot.width * 0.65), int(screenshot.height * 0.65)))
-            if screenshot == Empty: continue
-
-            # Check if BRAWLER button is found
-            ss_text = reader.readtext(np.array(screenshot))
-            for item in ss_text:
-                text = item[1].lower()
-                if 'brawlers' in text:
-                    break
-            else:
-                continue
-            break
-        cprint('Screenshot received.', 'CHECK')
-
-        # Retrieve and click
-        x = 0
-        y = 0
-        for (bbox, text, conf) in ss_text:
-            if 'brawlers' in text.lower():
-                # bbox format: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-                xs = [p[0] for p in bbox]
-                ys = [p[1] for p in bbox]
-                x = sum(xs) / 4
-                y = sum(ys) / 4
-                break
-        x = x // 0.65 // 2
-        y = y // 0.65 // 2
-        cprint('Clicking ({}, {}) for brawler selection button.'.format(x, y),'ACTION')
-        click(x, y)
+        click(111, 493)  # Click brawlers button
+        time.sleep(3)
 
         # Find brawler
         for i in range(50):
             try:
                 screenshot = self.frame_queue.get(timeout=1)
+                if screenshot is None:
+                    raise Empty
             except Empty:
                 continue
 
@@ -142,55 +109,16 @@ class LobbyAutomation:
                 # Click brawler
                 cprint('Found brawler ' + brawler + '.', 'CHECK')
                 x, y = reworked_results[brawler]['center']
-                x, y = x // 0.65 // 2, y // 0.65 // 2  # Rescale back and divide due to Mac system
-                cprint('Clicking ({}, {}) to confirm {}.'.format(x, y, brawler), 'ACTION')
-                click(x, y)
+                x, y = x // 0.65, y // 0.65  # Rescale back
+                cprint('Clicking ({}, {}) to {}\' brawler page.'.format(x, y, brawler), 'ACTION')
+                click(x, y)  # Clicking the brawler
                 time.sleep(2)
-
-                # Retrieve screenshot
-                cprint('Waiting for screenshot...', 'INFO')
-                ss_text = []
-                while True:
-                    time.sleep(0.5)
-
-                    # Retrieve screenshot
-                    screenshot = self.frame_queue.get(timeout=1)
-                    screenshot = screenshot.resize((int(screenshot.width * 0.65), int(screenshot.height * 0.65)))
-                    if screenshot == Empty: continue
-
-                    # Check if SELECT button is found
-                    ss_text = reader.readtext(np.array(screenshot))
-                    for item in ss_text:
-                        text = item[1].lower()
-                        if text == 'selegt':
-                            text = 'select'
-                        if 'select' in text:
-                            break
-                    else:
-                        continue
-                    break
-                cprint('Screenshot received.', 'CHECK')
-
-                # Retrieve and click
-                x = 0
-                y = 0
-                for (bbox, text, conf) in ss_text:
-                    if ('select' in text.lower()) or ('selegt' in text.lower()):
-                        # bbox format: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-                        xs = [p[0] for p in bbox]
-                        ys = [p[1] for p in bbox]
-                        x = sum(xs) / 4
-                        y = sum(ys) / 4
-                        break
-                x = x // 0.65 // 2
-                y = y // 0.65 // 2
-                cprint('Clicking ({}, {}) to select {}'.format(x, y, brawler), 'ACTION')
-                click(x, y)
-                cprint('Selected brawler' + brawler + '.', 'CHECK')
-                time.sleep(5)
+                click(269, 976)  # Clicking select button
+                cprint('Selected brawler ' + brawler + '.', 'CHECK')
+                time.sleep(3)
                 break
             else:
                 cprint('Did not find brawler.', 'FAIL')
-            pyautogui.scroll(-100)
+            scroll_up(705, 841, 709, 519, 300)
             linebreak()
             time.sleep(1)

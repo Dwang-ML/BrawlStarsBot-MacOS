@@ -9,7 +9,7 @@ from shapely import LineString
 from shapely.geometry import Polygon
 from state_finder.main import get_state
 from detect import Detect
-from utils import load_toml_as_dict, count_hsv_pixels, cprint, key_press
+from utils import load_toml_as_dict, count_hsv_pixels, cprint, click
 
 pyautogui.PAUSE = 0
 
@@ -87,15 +87,15 @@ class Movement:
 
     @staticmethod
     def attack():
-        key_press(14)  # Press E
+        click(1467, 859)
 
     @staticmethod
     def use_hypercharge():
-        key_press(4)  # Press H
+        click(1342, 982)
 
     @staticmethod
     def use_gadget():
-        key_press(5)  # Press G
+        click(1619, 986)
 
     @staticmethod
     def get_random_attack_key():
@@ -513,7 +513,7 @@ class Play(Movement):
                     self.time_since_last_proceeding = current_time
                 else:
                     cprint('Haven\'t detected the player in a while - proceeding.', 'ACTION')
-                    key_press(12)  # Press Q
+                    click(1623, 968)
                     self.time_since_last_proceeding = time.time()
             self.scene_data.append({
                 'frame_number': len(self.scene_data),

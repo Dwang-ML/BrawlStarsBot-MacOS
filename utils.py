@@ -16,12 +16,13 @@ import time
 import subprocess
 import sys
 import shutil
+import atexit
 from ppadb.client import Client
+
 
 reader = easyocr.Reader(['en'])
 api_base_url = "localhost"
 device_serial = toml.load("./cfg/general_config.toml")['bluestacks_serial']
-
 
 def verify_adb_installs():
     if shutil.which('brew') is None:
@@ -39,7 +40,6 @@ def verify_adb_installs():
         subprocess.run(['brew', 'install', 'android-platform-tools'])
     else:
         print('ADB already installed.')
-
 
 def connect_adb():
     print('Bridging connection using adb...')
@@ -66,7 +66,7 @@ def connect_adb():
     device = devices[0]
     print('Connected to BlueStacks:', device.serial)
 
-    print('Locking resolution, dpi and settings...')
+    print('Locking resolution, DPI and settings...')
     device.shell('wm size 1920x1080')
     device.shell('wm density 320')
     device.shell('settings put system accelerometer_rotation 0')
@@ -103,135 +103,42 @@ def extract_text_and_positions(image_path):
 
 
 class ScreenshotTaker:
+    def __init__(self):
+        self.device = device_serial
+        self.latest_frame = None
+        self.running = False
+
     def take(self):
-        image = None
-        max_attempts = 3
+        try:
+            process = subprocess.Popen(
+                ["adb", "-s", self.device, "exec-out", "screencap"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=0
+            )
 
-        for attempt in range(max_attempts):
-            try:
-                result = subprocess.run(
-                    ['adb', '-s', device_serial, 'exec-out', 'screencap -p'],
-                    capture_output=True,
-                    timeout=1.0
-                )
+            raw_data, _ = process.communicate(timeout=1)
 
-                if result.returncode == 0 and result.stdout:
+            if raw_data:
+                nparr = np.frombuffer(raw_data, np.uint8)
+                if len(nparr) > 12:
+                    header_size = 12
+                    img_data = nparr[header_size:]
                     try:
-                        image = Image.open(BytesIO(result.stdout))
-                        if image.mode != 'RGB':
-                            image = image.convert('RGB')
-                        return image
-                    except Exception as e:
-                        continue
-
-            except subprocess.TimeoutExpired:
-                continue
-            except Exception as e:
-                cprint(f"Error on attempt {attempt + 1}: {e}", 'ERROR')
-                continue
-
-        if image is None:
-            try:
-                result = subprocess.run(
-                    ['adb', '-s', device_serial, 'exec-out', 'screencap'],
-                    capture_output=True,
-                    timeout=1.0
-                )
-
-                if result.returncode == 0 and result.stdout:
-                    try:
-                        image = Image.open(BytesIO(result.stdout))
-                        if image.mode != 'RGB':
-                            image = image.convert('RGB')
-                        return image
+                        w = 1920
+                        h = 1080
+                        if len(img_data) >= w * h * 4:
+                            img_array = img_data[:w * h * 4].reshape((h, w, 4))
+                            img_rgb = cv2.cvtColor(img_array, cv2.COLOR_BGRA2RGB)
+                            self.latest_frame = Image.fromarray(img_rgb)
                     except:
-                        image = self._parse_raw_screencap(result.stdout)
-                        if image:
-                            return image
-
-            except Exception as e:
-                cprint(f"Raw format attempt also failed: {e}", 'ERROR')
-
-        return image
-
-    def _parse_raw_screencap(self, data):
-        """Parse raw screencap format"""
-        if not data or len(data) < 100:
+                        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                        if img is not None:
+                            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                            self.latest_frame = Image.fromarray(img_rgb)
+            return self.latest_frame
+        except:
             return None
-
-        formats_to_try = [
-            # PNG
-            lambda d: Image.open(BytesIO(d)),
-
-            # Raw BGRA with 12-byte header
-            lambda d: self._parse_bgra(d, header_size=12),
-
-            # Raw BGRA with 20-byte header
-            lambda d: self._parse_bgra(d, header_size=20),
-
-            # Raw RGBA with 12-byte header
-            lambda d: self._parse_rgba(d, header_size=12),
-
-            # Raw RGBA with 20-byte header
-            lambda d: self._parse_rgba(d, header_size=20),
-
-            # Raw RGB (no alpha)
-            lambda d: self._parse_rgb(d, header_size=12),
-
-            # Raw RGB (no alpha)
-            lambda d: self._parse_rgb(d, header_size=20),
-        ]
-
-        for parser in formats_to_try:
-            try:
-                image = parser(data)
-                if image:
-                    if image.mode != 'RGB':
-                        image = image.convert('RGB')
-                    return image
-            except:
-                continue
-
-        return None
-
-    def _parse_bgra(self, data, header_size=12):
-        """Parse BGRA format"""
-        width, height = 1920, 1080
-        required_size = header_size + (width * height * 4)
-
-        if len(data) >= required_size:
-            pixel_data = data[header_size:header_size + width * height * 4]
-            arr = np.frombuffer(pixel_data, dtype=np.uint8)
-            arr = arr.reshape((height, width, 4))
-            rgb = arr[:, :, [2, 1, 0]]
-            return Image.fromarray(rgb, 'RGB')
-        return None
-
-    def _parse_rgba(self, data, header_size=12):
-        """Parse RGBA format"""
-        width, height = 1920, 1080
-        required_size = header_size + (width * height * 4)
-
-        if len(data) >= required_size:
-            pixel_data = data[header_size:header_size + width * height * 4]
-            arr = np.frombuffer(pixel_data, dtype=np.uint8)
-            arr = arr.reshape((height, width, 4))
-            rgb = arr[:, :, :3]
-            return Image.fromarray(rgb, 'RGB')
-        return None
-
-    def _parse_rgb(self, data, header_size=12):
-        """Parse RGB format"""
-        width, height = 1920, 1080
-        required_size = header_size + (width * height * 3)
-
-        if len(data) >= required_size:
-            pixel_data = data[header_size:header_size + width * height * 3]
-            arr = np.frombuffer(pixel_data, dtype=np.uint8)
-            arr = arr.reshape((height, width, 3))
-            rgb = arr[:, :, [2, 1, 0]]
-            return Image.fromarray(rgb, 'RGB')
-        return None
 
 
 def count_hsv_pixels(pil_image, low_hsv, high_hsv):
@@ -390,6 +297,8 @@ def click(x, y):
     y = int(y)
     device.shell(f'input tap {x} {y}')
 
+def scroll_up(x1, y1, x2, y2, duration):
+    device.input_swipe(x1, y1, x2, y2, duration)
 
 def get_latest_version():
     url = f'https://{api_base_url}/check_version'

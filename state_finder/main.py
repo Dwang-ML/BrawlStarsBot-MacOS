@@ -22,10 +22,6 @@ check_brawl_stars_crashed = str(load_toml_as_dict("./cfg/general_config.toml")['
 
 
 def is_template_in_region(image, template_path, region):  # With scale invariation
-    # Downscale the original image by 1/2
-    current_height, current_width = image.shape[:2]
-    image = cv2.resize(image, (current_width // 2, current_height // 2))
-
     # Crop
     orig_x, orig_y, orig_width, orig_height = region
     cropped_image = image[orig_y:orig_y + orig_height, orig_x:orig_x + orig_width]

@@ -2,6 +2,12 @@ import asyncio
 import threading
 import time
 from queue import Queue, Full, Empty
+import warnings
+
+# Suppress PyTorch MPS pin_memory warnings
+warnings.filterwarnings("ignore",
+                       message=".*pin_memory.*MPS.*",
+                       category=UserWarning)
 
 import pyautogui
 
