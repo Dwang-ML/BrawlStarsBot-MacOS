@@ -16,7 +16,6 @@ import time
 import subprocess
 import sys
 import shutil
-import atexit
 from ppadb.client import Client
 
 
