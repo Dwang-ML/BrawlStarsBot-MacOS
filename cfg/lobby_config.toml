@@ -8,12 +8,11 @@ trophy_observer = [20, 90, 400, 105] #c
 [template_matching]
 # Regions which will be cropped and then template will be looked for
 # Example: powerpoint region will crop out a region in which powerpoints are visible inside the shop
-brawl_stars_icon = [10, 1, 990, 61] # no need, not using LDplayer, as its not supported on mac
-powerpoint = [203, 106, 30, 30] #c
-brawler_menu_task = [1100, 75, 80, 75] #c
-close_popup = [1235, 70, 555, 278]
-lobby_menu = [1350, 98, 120, 85] #c
-brawl_pass_house = [1350, 85, 100, 65] #c
-go_back_arrow = [30, 80, 80, 75] #c
-star_drop = [450, 200, 600, 575] #c
+powerpoint = [1013, 11, 65, 65]
+brawler_menu_task = [1463, 8, 70, 70]
+close_popup = [1235, 70, 555, 278]  # test laterrrrrr
+lobby_menu = [1871, 78, 74, 54]
+brawl_pass_house = [1781, 10, 116, 80]
+go_back_arrow = [49, 11, 77, 84]
+star_drop = [450, 200, 600, 575]  # test later
 

@@ -9,7 +9,7 @@ import numpy as np
 from difflib import SequenceMatcher
 
 sys.path.append(os.path.abspath('../'))
-from utils import count_hsv_pixels, load_toml_as_dict, cprint, linebreak
+from utils import load_toml_as_dict, cprint, linebreak
 
 path = r"./state_finder/images_to_detect/"
 images_with_star_drop = []
@@ -33,12 +33,11 @@ def is_template_in_region(image, template_path, region):  # With scale invariati
     image_gray = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
     template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 
-    # Apply Gaussian blur (optional, can help with minor noise)
+    # Apply Gaussian blur
     image_gray = cv2.GaussianBlur(image_gray, (3, 3), 0)
     template_gray = cv2.GaussianBlur(template_gray, (3, 3), 0)
 
     best_val = -1
-    best_loc = None
     best_scale = 1
     h, w = template_gray.shape[:2]
 
@@ -53,9 +52,7 @@ def is_template_in_region(image, template_path, region):  # With scale invariati
 
         if max_val > best_val:
             best_val = max_val
-            best_loc = max_loc
             best_scale = scale
-            best_template_shape = resized_template.shape[:2]
 
     if best_val >= 0.85:
         cprint(f"Best match confidence: {best_val:.4f} at scale {best_scale:.2f}", 'INFO')
