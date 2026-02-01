@@ -18,10 +18,10 @@ import sys
 import shutil
 from ppadb.client import Client
 
-
 reader = easyocr.Reader(['en'])
 api_base_url = "localhost"
 device_serial = toml.load("./cfg/general_config.toml")['bluestacks_serial']
+
 
 def verify_adb_installs():
     if shutil.which('brew') is None:
@@ -39,6 +39,7 @@ def verify_adb_installs():
         subprocess.run(['brew', 'install', 'android-platform-tools'])
     else:
         print('ADB already installed.')
+
 
 def connect_adb():
     print('Bridging connection using adb...')
@@ -296,12 +297,17 @@ def click(x, y):
     y = int(y)
     device.shell(f'input tap {x} {y}')
 
+
 def scroll_up(x1, y1, x2, y2, duration):
     device.input_swipe(x1, y1, x2, y2, duration)
 
 
 def hold(x, y, duration=1000):
     device.input_swipe(x, y, x, y, duration)
+
+
+def move(direction):
+    pass  # Logic for moving to wasd... Note for myself: remember to check for hold and all 8 directions wa ws...
 
 
 def get_latest_version():
