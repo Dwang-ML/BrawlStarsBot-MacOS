@@ -9,8 +9,6 @@ warnings.filterwarnings("ignore",
                        message=".*pin_memory.*MPS.*",
                        category=UserWarning)
 
-import pyautogui
-
 from gui.hub import Hub
 from gui.login import login
 from gui.main import App
@@ -173,7 +171,7 @@ def pyla_main(data):
     return width, height
 
 
-width, height = pyautogui.size()
+width, height = 1920, 1080
 
 all_brawlers = get_brawler_list()
 if api_base_url != 'localhost':

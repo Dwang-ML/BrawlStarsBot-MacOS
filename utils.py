@@ -299,6 +299,11 @@ def click(x, y):
 def scroll_up(x1, y1, x2, y2, duration):
     device.input_swipe(x1, y1, x2, y2, duration)
 
+
+def hold(x, y, duration=1000):
+    device.input_swipe(x, y, x, y, duration)
+
+
 def get_latest_version():
     url = f'https://{api_base_url}/check_version'
     response = requests.get(url)

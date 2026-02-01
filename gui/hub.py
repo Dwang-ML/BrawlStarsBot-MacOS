@@ -3,18 +3,13 @@ import sys
 import customtkinter as ctk
 import webbrowser
 import os
-import time
-import pyautogui
 from PIL import Image
 import tkinter as tk
 import mss
 from utils import load_toml_as_dict, save_dict_as_toml, get_discord_link
 
 orig_screen_width, orig_screen_height = 1920, 1080
-width, height = pyautogui.size()
-width_ratio = width / orig_screen_width
-height_ratio = height / orig_screen_height
-scale_factor = min(width_ratio, height_ratio)
+scale_factor = 1
 monitors = [str(i) for i in range(1, len(mss.mss().monitors))]
 
 

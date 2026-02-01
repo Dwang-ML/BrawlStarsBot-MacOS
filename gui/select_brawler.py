@@ -3,7 +3,6 @@ import tkinter as tk
 from math import ceil
 
 import customtkinter as ctk
-import pyautogui
 from PIL import Image
 from customtkinter import CTkImage
 from utils import load_toml_as_dict
@@ -11,7 +10,7 @@ from tkinter import filedialog
 from utils import cprint, linebreak
 
 debug = load_toml_as_dict('./cfg/general_config.toml')['super_debug'] == 'yes'
-width, height = pyautogui.size()
+width, height = 1920, 1080
 pyla_version = load_toml_as_dict('./cfg/general_config.toml')['pyla_version']
 
 

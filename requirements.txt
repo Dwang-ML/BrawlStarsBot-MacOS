@@ -3,7 +3,6 @@ aiohttp
 customtkinter
 opencv-python
 numpy
-pyautogui
 onnxruntime-silicon
 requests
 toml

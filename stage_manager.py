@@ -6,14 +6,13 @@ from queue import Empty
 
 import cv2
 import numpy as np
-import pyautogui
 import requests
 
 from lobby_automation import LobbyAutomation
 from state_finder.main import get_state
 from trophy_observer import TrophyObserver
 from utils import find_template_center, extract_text_and_positions, load_toml_as_dict, async_notify_user, \
-    save_brawler_data, cprint, click
+    save_brawler_data, cprint, click, hold
 
 user_id = load_toml_as_dict('cfg/general_config.toml')['discord_id']
 debug = load_toml_as_dict('cfg/general_config.toml')['super_debug'] == 'yes'
@@ -34,10 +33,7 @@ def notify_user(message_type):
 
 
 orig_screen_width, orig_screen_height = 1920, 1080
-width, height = pyautogui.size()
-width_ratio = width / orig_screen_width
-height_ratio = height / orig_screen_height
-scale_factor = min(width_ratio, height_ratio)
+scale_factor = 1
 
 
 def load_image(image_path):
@@ -89,8 +85,8 @@ class StageManager:
                 click(x, y)
                 return
 
-        x, y = self.lobby_config['lobby']['brawl_stars_icon'][0] * width_ratio, \
-               self.lobby_config['lobby']['brawl_stars_icon'][1] * height_ratio
+        x, y = self.lobby_config['lobby']['brawl_stars_icon'][0], \
+               self.lobby_config['lobby']['brawl_stars_icon'][1]
         click(x, y)
 
     @staticmethod
@@ -168,9 +164,7 @@ class StageManager:
 
     def click_star_drop(self):
         if self.long_press_star_drop == 'yes':
-            pyautogui.keyDown('q')
-            time.sleep(10)
-            pyautogui.keyUp('q')
+            hold(1623, 968, 12)
         else:
             click(1623, 968)
 

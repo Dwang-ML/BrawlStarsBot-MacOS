@@ -4,14 +4,11 @@ import time
 from numba import njit
 
 import numpy as np
-import pyautogui
 from shapely import LineString
 from shapely.geometry import Polygon
 from state_finder.main import get_state
 from detect import Detect
 from utils import load_toml_as_dict, count_hsv_pixels, cprint, click
-
-pyautogui.PAUSE = 0
 
 TILE_SIZE = 70
 
@@ -216,12 +213,10 @@ class Play(Movement):
     @staticmethod
     def load_brawler_ranges():
         ranges = load_toml_as_dict('cfg/ranges.toml')
-        current_width, current_height = pyautogui.size()
-        screen_size_ratio = min(current_height / 1080, current_width / 1920)
         for k, v in ranges.items():
             if k == 'title':
                 continue
-            ranges[k] = [int(v[0] * screen_size_ratio), int(v[1] * screen_size_ratio)]
+            ranges[k] = [int(v[0]), int(v[1])]
         return ranges
 
     @staticmethod
@@ -570,9 +565,8 @@ class Play(Movement):
                 cprint(f'Frame {frame_data['frame_number'] + 1} is corrupt. Replacing with black background.', 'FAIL')
 
             # Scale factors if needed
-            screen_width, screen_height = pyautogui.size()
-            scale_x = 0.5 * (1920 / screen_width)
-            scale_y = 0.5 * (1080 / screen_height)
+            scale_x = 1
+            scale_y = 1
 
             if frame_data['wall']:
                 # Draw walls

@@ -4,7 +4,6 @@ from easyocr import easyocr
 from queue import Empty
 
 import numpy as np
-import pyautogui
 from utils import click
 from utils import extract_text_and_positions, ScreenshotTaker, scroll_up
 
