@@ -1,0 +1,75 @@
+name: Code Review
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  codeql:
+    name: CodeQL Security Scan
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install ARM Python and dependencies
+        run: |
+          # Install Homebrew if not installed
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          
+          # Install pyenv
+          brew install pyenv
+          
+          # Install Python 3.11.7 ARM build
+          arch -arm64 pyenv install 3.11.7
+          arch -arm64 pyenv global 3.11.7
+          
+          # Configure shell for pyenv
+          export PYENV_ROOT="$HOME/.pyenv"
+          export PATH="$PYENV_ROOT/bin:$PATH"
+          eval "$(pyenv init --path)"
+          eval "$(pyenv init -)"
+          
+          # Verify Python
+          which python3
+          python3 --version
+          pyenv versions
+          
+          # Install Python dependencies
+          pip install -r requirements.txt
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: python
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  coderabbit:
+    name: CodeRabbit Review
+    runs-on: macos-latest
+    needs: codeql
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install ARM Python and dependencies
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          brew install pyenv
+          arch -arm64 pyenv install 3.11.7
+          arch -arm64 pyenv global 3.11.7
+          export PYENV_ROOT="$HOME/.pyenv"
+          export PATH="$PYENV_ROOT/bin:$PATH"
+          eval "$(pyenv init --path)"
+          eval "$(pyenv init -)"
+          which python3
+          python3 --version
+          pyenv versions
+          pip install -r requirements.txt
+
+      - name: Run CodeRabbit
+        uses: coderabbit/code-review-action@v1
+        with:
+          api-token: ${{ secrets.CODERABBIT_API }}
