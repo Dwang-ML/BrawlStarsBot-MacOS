@@ -48,7 +48,7 @@ def is_template_in_region(image, template_path, region):  # With scale invariati
             continue
 
         result = cv2.matchTemplate(image_gray, resized_template, cv2.TM_CCOEFF_NORMED)
-        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+        _, max_val, _, _ = cv2.minMaxLoc(result)
 
         if max_val > best_val:
             best_val = max_val
@@ -98,8 +98,8 @@ def find_game_result(screenshot):
     if len(result) == 0:
         return False
 
-    _, text, conf = result[0]
-    game_result, ratio = rework_game_result(text)
+    _, text, _ = result[0]
+    _, ratio = rework_game_result(text)
     if ratio < 0.5:
         cprint("Couldn't find game result.", 'FAIL')
         return False
@@ -162,7 +162,6 @@ def is_in_star_drop(image):
 def get_state(screenshot):
     screenshot = np.array(screenshot)
     screenshot_bgr = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)
-    start_time = time.time()
     linebreak()
     state = get_in_game_state(screenshot_bgr)
     cprint(f'Current state: {state}', 'INFO')
