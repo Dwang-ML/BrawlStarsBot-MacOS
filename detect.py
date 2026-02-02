@@ -72,7 +72,7 @@ class Detect:
 
         return torch.from_numpy(padded_img), new_w, new_h
 
-    def postprocess(self, preds, img, orig_img_shape, resized_shape, conf_tresh=0.6):
+    def postprocess(self, preds, orig_img_shape, resized_shape, conf_tresh=0.6):
         # Apply Non-Maximum Suppression (NMS)
         preds = ops.non_max_suppression(
             preds,
@@ -116,7 +116,7 @@ class Detect:
         outputs = self.model.run(None, {'images': preprocessed_img.cpu().numpy()})
 
         # Postprocess the outputs
-        detections = self.postprocess(torch.from_numpy(outputs[0]), preprocessed_img, orig_img_shape, resized_shape, conf_tresh)
+        detections = self.postprocess(torch.from_numpy(outputs[0]), orig_img_shape, resized_shape, conf_tresh)
 
         results = {}
         for detection in detections:
