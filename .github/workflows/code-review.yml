@@ -52,7 +52,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install ARM Python and dependencies
         run: |
@@ -71,6 +73,6 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run CodeRabbit
-        uses: coderabbit/code-review-action@v1
+        uses: coderabbitai/ai-pr-reviewer@latest
         with:
           api-token: ${{ secrets.CODERABBIT_API }}
