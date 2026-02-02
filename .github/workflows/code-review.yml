@@ -75,4 +75,6 @@ jobs:
       - name: Run CodeRabbit
         uses: coderabbitai/ai-pr-reviewer@latest
         with:
-          api-token: ${{ secrets.CODERABBIT_API }}
+          review_simple_changes: true
+          openai_model: "gpt-4"
+          language: "en"
