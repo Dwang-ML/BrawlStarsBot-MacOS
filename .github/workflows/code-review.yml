@@ -75,5 +75,6 @@ jobs:
       - name: Run CodeRabbit
         uses: coderabbitai/ai-pr-reviewer@latest
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           review_simple_changes: true
           language: "en"
