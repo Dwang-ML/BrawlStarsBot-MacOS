@@ -76,5 +76,4 @@ jobs:
         uses: coderabbitai/ai-pr-reviewer@latest
         with:
           review_simple_changes: true
-          openai_model: "gpt-4"
           language: "en"
