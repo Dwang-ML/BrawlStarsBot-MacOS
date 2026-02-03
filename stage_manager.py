@@ -14,12 +14,14 @@ from trophy_observer import TrophyObserver
 from utils import find_template_center, extract_text_and_positions, load_toml_as_dict, async_notify_user, \
     save_brawler_data, cprint, click, hold
 
-user_id = load_toml_as_dict('cfg/general_config.toml')['discord_id']
-debug = load_toml_as_dict('cfg/general_config.toml')['super_debug'] == 'yes'
-user_webhook = load_toml_as_dict('cfg/general_config.toml')['personal_webhook']
+GENERAL_CONFIG_PATH = 'cfg/general_config.toml'
+
+user_id = load_toml_as_dict(GENERAL_CONFIG_PATH)['discord_id']
+debug = load_toml_as_dict(GENERAL_CONFIG_PATH)['super_debug'] == 'yes'
+user_webhook = load_toml_as_dict(GENERAL_CONFIG_PATH)['personal_webhook']
 
 
-def notify_user(message_type):
+def notify_user():
     # message type will be used to have conditions determining the message
     # but for now there's only one possible type of message
     message_data = {
@@ -52,7 +54,7 @@ def load_image(image_path):
 
 class StageManager:
     def __init__(self, screenshot_taker, brawlers_data, frame_queue):
-        self.Screenshot = screenshot_taker
+        self.screenshot = screenshot_taker
         self.states = {
             'shop': self.quit_shop,
             'brawler_selection': self.quit_shop,
@@ -64,7 +66,7 @@ class StageManager:
             'brawl_stars_crashed': self.start_brawl_stars,
             'star_drop': self.click_star_drop
         }
-        self.Lobby_automation = LobbyAutomation(frame_queue)
+        self.lobby_automation = LobbyAutomation(frame_queue)
         self.lobby_config = load_toml_as_dict('./cfg/lobby_config.toml')
         self.brawl_stars_icon = load_image('state_finder/images_to_detect/brawl_stars_icon.png')
         self.brawl_stars_icon_big = load_image('state_finder/images_to_detect/brawl_stars_icon_big.png')
@@ -72,14 +74,14 @@ class StageManager:
         self.close_popup_icon = load_image('state_finder/images_to_detect/close_popup.png')
         self.brawlers_pick_data = brawlers_data
         brawler_list = [brawler['brawler'] for brawler in brawlers_data]
-        self.Trophy_observer = TrophyObserver(brawler_list)
+        self.trophy_observer = TrophyObserver(brawler_list)
         self.time_since_last_stat_change = time.time()
         self.frame_queue = frame_queue
         self.long_press_star_drop = load_toml_as_dict('./cfg/general_config.toml')['long_press_star_drop']
 
     def start_brawl_stars(self, frame):
         data = extract_text_and_positions(np.array(frame))
-        for key in list(data.keys()):
+        for key in data.keys():
             if key.replace(' ', '') in ['brawl', 'brawlstars', 'stars']:
                 x, y = data[key]['center']
                 click(x, y)
@@ -104,8 +106,8 @@ class StageManager:
 
     def start_game(self, data):
         values = {
-            'trophies': self.Trophy_observer.current_trophies,
-            'mastery': self.Trophy_observer.current_mastery
+            'trophies': self.trophy_observer.current_trophies,
+            'mastery': self.trophy_observer.current_mastery
         }
 
         type_of_push = self.brawlers_pick_data[0]['type']
@@ -121,26 +123,26 @@ class StageManager:
                 cprint('Brawler reached required trophies. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
                 time.sleep(10 ** 5)
                 loop = asyncio.new_event_loop()
-                screenshot = self.Screenshot.take()
+                screenshot = self.screenshot.take()
                 loop.run_until_complete(async_notify_user('bot_is_stuck', screenshot))
                 loop.close()
                 return
             loop = asyncio.new_event_loop()
-            screenshot = self.Screenshot.take()
+            screenshot = self.screenshot.take()
             loop.run_until_complete(async_notify_user(self.brawlers_pick_data[0]['brawler'], screenshot))
             loop.close()
             self.brawlers_pick_data.pop(0)
-            self.Trophy_observer.change_trophies(self.brawlers_pick_data[0]['trophies'])
-            self.Trophy_observer.current_mastery = self.brawlers_pick_data[0]['mastery'] if self.brawlers_pick_data[0][
+            self.trophy_observer.change_trophies(self.brawlers_pick_data[0]['trophies'])
+            self.trophy_observer.current_mastery = self.brawlers_pick_data[0]['mastery'] if self.brawlers_pick_data[0][
                                                                                                 'mastery'] != '' else -99999
-            self.Trophy_observer.win_streak = self.brawlers_pick_data[0]['win_streak']
+            self.trophy_observer.win_streak = self.brawlers_pick_data[0]['win_streak']
             next_brawler_name = self.brawlers_pick_data[0]['brawler']
             if self.brawlers_pick_data[0]['automatically_pick']:
                 cprint('Picking next automatically picked brawler.', 'ACTION')
                 try:
                     screenshot = self.frame_queue.get(timeout=1)
                 except Empty:
-                    screenshot = self.Screenshot.take()
+                    screenshot = self.screenshot.take()
                 current_state = get_state(screenshot)
                 if current_state != 'lobby':
                     cprint('Trying to reach the lobby to switch brawler', 'INFO')
@@ -148,7 +150,7 @@ class StageManager:
                 while current_state != 'lobby':
                     click(1623, 968)
                     time.sleep(1)
-                self.Lobby_automation.select_brawler(next_brawler_name)
+                self.lobby_automation.select_brawler(next_brawler_name)
             else:
                 cprint('Next brawler is in manual mode, waiting 10 seconds to let user switch.', 'INFO')
 
@@ -169,7 +171,7 @@ class StageManager:
             click(1623, 968)
 
     def end_game(self):
-        screenshot = self.Screenshot.take()
+        screenshot = self.screenshot.take()
 
         found_game_result = False
         current_state = get_state(screenshot)
@@ -177,13 +179,13 @@ class StageManager:
             if not found_game_result and time.time() - self.time_since_last_stat_change > 10:
 
                 # will return True if updates trophies, trophies are updated inside Trophy observer
-                found_game_result = self.Trophy_observer.find_game_result(screenshot,
+                found_game_result = self.trophy_observer.find_game_result(screenshot,
                                                                           current_brawler=self.brawlers_pick_data[0][
                                                                               'brawler'])
                 self.time_since_last_stat_change = time.time()
                 values = {
-                    'trophies': self.Trophy_observer.current_trophies,
-                    'mastery': self.Trophy_observer.current_mastery
+                    'trophies': self.trophy_observer.current_trophies,
+                    'mastery': self.trophy_observer.current_mastery
                 }
                 type_to_push = self.brawlers_pick_data[0]['type']
                 value = values[type_to_push]
@@ -201,7 +203,7 @@ class StageManager:
                     if len(self.brawlers_pick_data) <= 1:
                         cprint('Brawler reached required trophies. No more brawlers selected for pushing in the menu. Bot will now pause itself until closed.', 'CHECK')
                         loop = asyncio.new_event_loop()
-                        screenshot = self.Screenshot.take()
+                        screenshot = self.screenshot.take()
                         loop.run_until_complete(async_notify_user('completed', screenshot))
                         loop.close()
                         if os.path.exists('latest_brawler_data.json'):
@@ -212,7 +214,7 @@ class StageManager:
             cprint('Game has ended.', 'INFO')
             cprint('Pressing Q to continue.', 'ACTION')
             time.sleep(3)
-            screenshot = self.Screenshot.take()
+            screenshot = self.screenshot.take()
             current_state = get_state(screenshot)
         cprint('Game has ended.', 'INFO')
 
@@ -229,7 +231,7 @@ class StageManager:
                 click(in_between[0], in_between[1])
 
     def close_pop_up(self):
-        screenshot = self.Screenshot.take()
+        screenshot = self.screenshot.take()
         popup_location = find_template_center(screenshot, self.close_popup_icon)
         if popup_location:
             click(popup_location[0], popup_location[1])
