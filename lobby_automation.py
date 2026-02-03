@@ -78,7 +78,7 @@ class LobbyAutomation:
         time.sleep(3)
 
         # Find brawler
-        for i in range(50):
+        for _ in range(50):
             try:
                 screenshot = self.frame_queue.get(timeout=1)
                 if screenshot is None:
