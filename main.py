@@ -22,13 +22,15 @@ from utils import ScreenshotTaker, load_toml_as_dict, current_wall_model_is_late
 from utils import get_brawler_list, update_missing_brawler_ranges, update_icons, check_version, async_notify_user, \
     update_wall_model_classes, get_latest_wall_model_file, get_latest_version, cprint, focus_window
 
-pyla_version = load_toml_as_dict('./cfg/general_config.toml')['pyla_version']
-chosen_monitor = int(load_toml_as_dict('./cfg/general_config.toml')['monitor'])
+GENERAL_CONFIG_PATH = './cfg/general_config.toml'
+
+pyla_version = load_toml_as_dict(GENERAL_CONFIG_PATH)['pyla_version']
+chosen_monitor = int(load_toml_as_dict(GENERAL_CONFIG_PATH)['monitor'])
 frame_lock = threading.Lock()
 frame_available = threading.Event()
 Screenshot = ScreenshotTaker()
 frame_queue = Queue(maxsize=1)
-debug = load_toml_as_dict('cfg/general_config.toml')['super_debug'] == 'yes'
+debug = load_toml_as_dict(GENERAL_CONFIG_PATH)['super_debug'] == 'yes'
 
 
 def capture_loop():
@@ -51,14 +53,14 @@ def pyla_main(data):
     class Main:
         def __init__(self, lobby_automator):
             self.specific_brawlers_data = []
-            self.Play = Play(*self.load_models())
-            self.Time_management = TimeManagement()
+            self.play = Play(*self.load_models())
+            self.time_management = TimeManagement()
             self.lobby_automator = lobby_automator
-            self.Stage_manager = StageManager(Screenshot, data, frame_queue)
+            self.stage_manager = StageManager(Screenshot, data, frame_queue)
             self.states_requiring_data = ['play_store', 'brawl_stars_crashed', 'lobby']
             if data[0]['automatically_pick']:
                 self.lobby_automator.select_brawler(data[0]['brawler'])
-            self.Play.current_brawler = data[0]['brawler']
+            self.play.current_brawler = data[0]['brawler']
             self.no_detections_action_threshold = 60 * 8
             self.initialize_stage_manager()
             self.state = None
@@ -74,9 +76,9 @@ def pyla_main(data):
             self.cooldown_duration = 3 * 60
 
         def initialize_stage_manager(self):
-            self.Stage_manager.Trophy_observer.win_streak = 0
-            self.Stage_manager.Trophy_observer.current_trophies = data[0]['trophies']
-            self.Stage_manager.Trophy_observer.current_mastery = data[0]['mastery'] if data[0][
+            self.stage_manager.Trophy_observer.win_streak = 0
+            self.stage_manager.Trophy_observer.current_trophies = data[0]['trophies']
+            self.stage_manager.Trophy_observer.current_mastery = data[0]['mastery'] if data[0][
                                                                                            'mastery'] != '' else -99999
 
         @staticmethod
@@ -100,19 +102,19 @@ def pyla_main(data):
             time.sleep(99 * 999)
 
         def manage_time_tasks(self, frame):
-            if self.Time_management.state_check():
+            if self.time_management.state_check():
                 state = get_state(frame)
                 self.state = state
                 frame_data = frame if state in self.states_requiring_data else None
-                self.Stage_manager.do_state(state, frame_data)
+                self.stage_manager.do_state(state, frame_data)
 
-            if self.Time_management.no_detections_check():
-                frame_data = self.Play.time_since_detections
+            if self.time_management.no_detections_check():
+                frame_data = self.play.time_since_detections
                 for key, value in frame_data.items():
                     if time.time() - value > self.no_detections_action_threshold:
                         self.restart_brawl_stars()
 
-            if self.Time_management.idle_check():
+            if self.time_management.idle_check():
                 cprint('Checking for idle or disconnect.', 'INFO')
                 self.lobby_automator.check_for_idle(frame)
 
@@ -127,7 +129,7 @@ def pyla_main(data):
                                'CHECK')
                         self.in_cooldown = True  # tries to finish game if in game
                         self.cooldown_start_time = time.time()
-                        self.Stage_manager.states['lobby'] = lambda data: 0
+                        self.stage_manager.states['lobby'] = lambda data: 0
 
                 if self.in_cooldown:
                     if time.time() - self.cooldown_start_time >= self.cooldown_duration:
@@ -146,12 +148,12 @@ def pyla_main(data):
 
                 self.manage_time_tasks(frame)  # Replace with your actual method
 
-                if self.Time_management.specific_brawlers_check():
-                    self.Play.get_specific_data(frame)
-                    self.Time_management.states['game_start'] = time.time()
+                if self.time_management.specific_brawlers_check():
+                    self.play.get_specific_data(frame)
+                    self.time_management.states['game_start'] = time.time()
 
-                brawler = self.Stage_manager.brawlers_pick_data[0]['brawler']
-                self.Play.main(frame, brawler)
+                brawler = self.stage_manager.brawlers_pick_data[0]['brawler']
+                self.play.main(frame, brawler)
                 c += 1
 
                 # Enforce max IPS if set
