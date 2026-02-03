@@ -24,16 +24,14 @@ def login(logged_in_setter):
             logged_in_setter(True)
             app.destroy()
             update_toml_file("../cfg/login.toml", {"key": api_key})
-            return
         else:
             result_label.configure(text="Invalid API Key", text_color="red")
 
     login_data = load_toml_as_dict('./cfg/login.toml')
     auth_key = login_data['key']
-    if auth_key:
-        if validate_api_key(auth_key):
-            logged_in_setter(True)
-            return
+    if auth_key and validate_api_key(auth_key):
+        logged_in_setter(True)
+        return
 
     app = ctk.CTk()
     app.title('API Key Login')
