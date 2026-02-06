@@ -25,8 +25,7 @@ class Movement:
         TIME_THRESHOLDS_PATH = 'cfg/time_tresholds.toml'
         BOT_CONFIG_PATH = 'cfg/bot_config.toml'
         self.game_mode = load_toml_as_dict(BOT_CONFIG_PATH)['gamemode_type']
-        self.should_use_gadget = load_toml_as_dict(BOT_CONFIG_PATH)['bot_uses_gadgets'] == 'yes' or \
-                                 load_toml_as_dict(BOT_CONFIG_PATH)['bot_uses_gadgets'] == 'true'
+        self.should_use_gadget = load_toml_as_dict(BOT_CONFIG_PATH)['bot_uses_gadgets'] in ['yes', 'true']
         self.gadget_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['gadget']
         self.hypercharge_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['hypercharge']
         self.walls_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['wall_detection']
