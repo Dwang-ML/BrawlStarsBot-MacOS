@@ -15,20 +15,21 @@ TILE_SIZE = 70
 
 class Movement:
     def __init__(self):
+        self.TIME_THRESHOLDS_PATH = 'cfg/time_tresholds.toml'
+        self.BOT_CONFIG_PATH = 'cfg/bot_config.toml'
+
         self.fix_movement_keys = {
-            'delay_to_trigger': load_toml_as_dict('cfg/bot_config.toml')['unstuck_movement_delay'],
-            'duration': load_toml_as_dict('cfg/bot_config.toml')['unstuck_movement_hold_time'],
+            'delay_to_trigger': load_toml_as_dict(self.BOT_CONFIG_PATH)['unstuck_movement_delay'],
+            'duration': load_toml_as_dict(self.BOT_CONFIG_PATH)['unstuck_movement_hold_time'],
             'toggled': False,
             'started_at': time.time(),
             'fixed': ''
         }
-        TIME_THRESHOLDS_PATH = 'cfg/time_tresholds.toml'
-        BOT_CONFIG_PATH = 'cfg/bot_config.toml'
-        self.game_mode = load_toml_as_dict(BOT_CONFIG_PATH)['gamemode_type']
-        self.should_use_gadget = load_toml_as_dict(BOT_CONFIG_PATH)['bot_uses_gadgets'] in ['yes', 'true']
-        self.gadget_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['gadget']
-        self.hypercharge_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['hypercharge']
-        self.walls_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['wall_detection']
+        self.game_mode = load_toml_as_dict(self.BOT_CONFIG_PATH)['gamemode_type']
+        self.should_use_gadget = load_toml_as_dict(self.BOT_CONFIG_PATH)['bot_uses_gadgets'] in ['yes', 'true']
+        self.gadget_treshold = load_toml_as_dict(self.TIME_THRESHOLDS_PATH)['gadget']
+        self.hypercharge_treshold = load_toml_as_dict(self.TIME_THRESHOLDS_PATH)['hypercharge']
+        self.walls_treshold = load_toml_as_dict(self.TIME_THRESHOLDS_PATH)['wall_detection']
         self.keep_walls_in_memory = self.walls_treshold <= 1
         self.last_walls_data = None
         self.keys_hold = []
@@ -45,8 +46,8 @@ class Movement:
 
     @staticmethod
     @njit
-    def get_player_pos(player_data):
-        return (player_data[0] + player_data[2]) / 2, (player_data[1] + player_data[3]) / 2
+    def get_player_pos(player):
+        return (player[0] + player[2]) / 2, (player[1] + player[3]) / 2
 
     @staticmethod
     @njit
@@ -133,8 +134,8 @@ class Movement:
 class Play(Movement):
     def __init__(self, main_info_model, specific_info_model, starting_screen_model, tile_detector_model):
         super().__init__()
-
         self.specific_game_data = {}
+        BOT_CONFIG_TOML = load_toml_as_dict(self.BOT_CONFIG_PATH)
         self.Detect_main_info = Detect(main_info_model, classes=['enemy', 'teammate', 'player'])
         self.Detect_specific_info = Detect(specific_info_model,
                                            classes=['ammo', 'ball', 'damage_taken', 'defeat', 'draw',
@@ -154,7 +155,7 @@ class Play(Movement):
                                                     'surge', 'tara', 'tick', 'willow', 'lily', 'enemy_ability',
                                                     'ally_ability'])
         self.Detect_starting_screen = Detect(starting_screen_model)
-        self.tile_detector_model_classes = load_toml_as_dict('cfg/bot_config.toml')['wall_model_classes']
+        self.tile_detector_model_classes = BOT_CONFIG_TOML['wall_model_classes']
 
         self.Detect_tile_detector = Detect(
             tile_detector_model,
@@ -188,13 +189,14 @@ class Play(Movement):
         self.wall_history = []
         self.wall_history_length = 3  # Number of frames to keep walls
         self.scene_data = []
-        self.should_detect_walls = load_toml_as_dict('cfg/bot_config.toml')['gamemode'] in ['brawlball', 'brawl_ball',
+
+        self.should_detect_walls = BOT_CONFIG_TOML['gamemode'] in ['brawlball', 'brawl_ball',
                                                                                             'brawll ball']
-        self.minimum_movement_delay = load_toml_as_dict('cfg/bot_config.toml')['minimum_movement_delay']
-        self.no_detection_proceed_delay = load_toml_as_dict('cfg/time_tresholds.toml')['no_detection_proceed']
-        self.gadget_pixels_minimum = load_toml_as_dict('cfg/bot_config.toml')['gadget_pixels_minimum']
-        self.hypercharge_pixels_minimum = load_toml_as_dict('cfg/bot_config.toml')['hypercharge_pixels_minimum']
-        self.wall_detection_confidence = load_toml_as_dict('cfg/bot_config.toml')['wall_detection_confidence']
+        self.minimum_movement_delay = BOT_CONFIG_TOML['minimum_movement_delay']
+        self.no_detection_proceed_delay = load_toml_as_dict(self.TIME_THRESHOLDS_PATH)['no_detection_proceed']
+        self.gadget_pixels_minimum = BOT_CONFIG_TOML['gadget_pixels_minimum']
+        self.hypercharge_pixels_minimum = BOT_CONFIG_TOML['hypercharge_pixels_minimum']
+        self.wall_detection_confidence = BOT_CONFIG_TOML['wall_detection_confidence']
 
     def get_specific_data(self, frame):
         self.specific_game_data = self.Detect_specific_info.detect_objects(frame)
