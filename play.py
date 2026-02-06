@@ -22,12 +22,14 @@ class Movement:
             'started_at': time.time(),
             'fixed': ''
         }
-        self.game_mode = load_toml_as_dict('cfg/bot_config.toml')['gamemode_type']
-        self.should_use_gadget = load_toml_as_dict('cfg/bot_config.toml')['bot_uses_gadgets'] == 'yes' or \
-                                 load_toml_as_dict('cfg/bot_config.toml')['bot_uses_gadgets'] == 'true'
-        self.gadget_treshold = load_toml_as_dict('cfg/time_tresholds.toml')['gadget']
-        self.hypercharge_treshold = load_toml_as_dict('cfg/time_tresholds.toml')['hypercharge']
-        self.walls_treshold = load_toml_as_dict('cfg/time_tresholds.toml')['wall_detection']
+        TIME_THRESHOLDS_PATH = 'cfg/time_tresholds.toml'
+        BOT_CONFIG_PATH = 'cfg/bot_config.toml'
+        self.game_mode = load_toml_as_dict(BOT_CONFIG_PATH)['gamemode_type']
+        self.should_use_gadget = load_toml_as_dict(BOT_CONFIG_PATH)['bot_uses_gadgets'] == 'yes' or \
+                                 load_toml_as_dict(BOT_CONFIG_PATH)['bot_uses_gadgets'] == 'true'
+        self.gadget_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['gadget']
+        self.hypercharge_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['hypercharge']
+        self.walls_treshold = load_toml_as_dict(TIME_THRESHOLDS_PATH)['wall_detection']
         self.keep_walls_in_memory = self.walls_treshold <= 1
         self.last_walls_data = None
         self.keys_hold = []
@@ -332,7 +334,7 @@ class Play(Movement):
     def get_brawler_range(self, brawler):
         return self.brawler_ranges[brawler]
 
-    def loop(self, brawler, data, current_time):
+    def loop(self, brawler, data):
         safe_range, attack_range = self.get_brawler_range(brawler)
         movement = self.get_movement(player_data=data['player'][0], enemy_data=data['enemy'], safe_range=safe_range,
                                      attack_range=attack_range, walls=data['wall'])
@@ -517,7 +519,7 @@ class Play(Movement):
             self.is_gadget_ready = self.check_if_gadget_ready(frame)
             self.time_since_gadget_checked = current_time
 
-        movement = self.loop(brawler, data, current_time)
+        movement = self.loop(brawler, data)
 
         # Add data for visualization
         self.scene_data.append({
